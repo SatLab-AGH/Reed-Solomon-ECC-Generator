@@ -1,0 +1,17 @@
+[project]
+name = "reed-solomon-generator"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "galois>=0.4.10",
+    "numpy>=2.3.5",
+    "pytest>=9.0.2",
+    "pytest-randomly>=4.0.1",
+]
+
+[tool.pytest.ini_options]
+# Specifies the directories pytest should search for tests
+testpaths = ["generators"]
+python_files = ["*.py"]
