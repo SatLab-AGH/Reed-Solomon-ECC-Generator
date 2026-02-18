@@ -1,3 +1,5 @@
+import logging
+from logging.handlers import RotatingFileHandler
 import unittest
 import Mastrovito
 import json
@@ -5,11 +7,22 @@ import datetime
 import os
 import pathlib
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+proj_path = pathlib.Path(__file__).resolve().parent.parent
+handle = RotatingFileHandler(proj_path.joinpath("logs/mastrovitoverilog.log"), maxBytes=5 * 1024 * 1024, backupCount=3)
+formatter = logging.Formatter(
+    '%(asctime)s | %(levelname)-8s | %(filename)s:%(lineno)d | %(funcName)s | %(message)s'
+)
+handle.setFormatter(formatter)
+logger.addHandler(handle)
+
 class MastrovitoVerilog(Mastrovito.MastrovitoMatrixGenerator):
     """
     Class for transforming Mastrovito multiplication matrix into verilog zero latency multiply and add module.
     """
     def __init__(self):
+        logger.info("Loading config")
         self._load_config()
         if self.config["gf_degree"] is not None:
             degree = self.config["gf_degree"]
@@ -17,6 +30,8 @@ class MastrovitoVerilog(Mastrovito.MastrovitoMatrixGenerator):
         irreducible_poly = None
         if len(self.config["irreducible_poly"]):
             irreducible_poly = self.config["irreducible_poly"]
+
+        logger.info(f"Initializing Mastrovito matrix generator with degree {degree} and irreducible polynomial {irreducible_poly}")
 
         super().__init__(degree, irreducible_poly)
         
@@ -106,6 +121,7 @@ class MastrovitoVerilog(Mastrovito.MastrovitoMatrixGenerator):
     # Module
 
     def _generate_module_header(self):
+        logger.info("Generating module header")
         return \
             f'module {self.config["design_name"]}_Deg{self.config["gf_degree"]} #\n' + \
             f'(\n' + \
@@ -129,7 +145,7 @@ class MastrovitoVerilog(Mastrovito.MastrovitoMatrixGenerator):
             f'endmodule;\n'
     
     def _generate_module_body(self, multiplicants):
-
+        logger.info("Generating module body")
         outstring = \
             f'generate\n' + \
             f'\n'
@@ -178,62 +194,23 @@ class MastrovitoVerilog(Mastrovito.MastrovitoMatrixGenerator):
     
     def print_verilog_file(self):
         file_name = f'{self.config["design_name"]}_Deg{self.config["gf_degree"]}.v'
-        path = self.config["path"]
+
+        path = proj_path.joinpath(self.config["path"])
         
         os.makedirs(path, exist_ok=True)
         
         multiplicants = self.config["constant_multplicants"]
         multiplicants.sort()
             
-        with open(path+file_name, 'w') as file:
+        with open(pathlib.Path.joinpath(path, file_name), 'w') as file:
             
+            logger.info(f"Generating Verilog File: {path}")
             file.write(self._generate_file_header())
             
             file.write(self._generate_module(multiplicants))
-
-
-        
-            
-# class TestMastrovitoVerilog(unittest.TestCase):
-#     def __init__(self, methodName = "runTest"):
-#         super().__init__(methodName)
-        
-    # def test_generate_func_header(self):
-    #     gf_degree = 10
-    #     mastroVer = MastrovitoVerilog(gf_degree)
-        
-    #     A = 253
-
-    #     print(mastroVer._generate_function_header(A, gf_degree))
-        
-    # def test_generate_func_foot(self):
-    #     gf_degree = 10
-    #     mastroVer = MastrovitoVerilog(gf_degree)
-
-    #     print(mastroVer._generate_function_foot())
-        
-    # def test_generate_func_body(self):
-    #     gf_degree = 10
-    #     mastroVer = MastrovitoVerilog(gf_degree)
-
-    #     A = 253
-
-    #     print(mastroVer._generate_function_body(mastroVer.get_mastrovito(A)))
-    
-    # def test_generate_func(self):
-    #     gf_degree = 10
-    #     mastroVer = MastrovitoVerilog(gf_degree)
-
-    #     A = 253
-
-    #     print(mastroVer.generate_function(A))
-    
-    # def test_generate_func(self):
-    #     mastroVer = MastrovitoVerilog()
-    #     mastroVer.print_verilog_file()
             
 if __name__ == '__main__':
-    #unittest.main()
     
     mastroVer = MastrovitoVerilog()
+
     mastroVer.print_verilog_file()
