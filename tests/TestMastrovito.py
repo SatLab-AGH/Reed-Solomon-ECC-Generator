@@ -1,21 +1,14 @@
 import logging
-from logging.handlers import RotatingFileHandler
 import random
 
 import galois
 import numpy as np
 import pytest
+from bitarray import bitarray
 
 from generators.Mastrovito import MastrovitoMatrixGenerator
 
-loger = logging.getLogger(__name__)
-loger.setLevel(logging.DEBUG)
-handle = RotatingFileHandler("./logs/mastrovito.log", maxBytes=5 * 1024 * 1024, backupCount=3)
-formatter = logging.Formatter(
-    '%(asctime)s | %(levelname)-8s | %(filename)s:%(lineno)d | %(funcName)s | %(message)s'
-)
-handle.setFormatter(formatter)
-loger.addHandler(handle)
+logger = logging.getLogger(__name__)
 
 TESTING_ITER = 1000
 
@@ -38,14 +31,22 @@ pytestmark = pytest.mark.parametrize(
 
 def test_MastrovitoMatrixGenerator(gf_degree, A_constant, g_poly:galois.Poly):
     mastro = MastrovitoMatrixGenerator(gf_degree, g_poly.coeffs.tolist())
+    gal_field = mastro.gf_field
     gf_max = 1 << gf_degree
 
     for _ in range(TESTING_ITER):
         B = random.randint(0, gf_max-1)
-        (C_mod, C_mastro) = mastro._crosscheck_with_modulo(A_constant, B)
+        A_g = gal_field(A_constant)
+        B_g = gal_field(B) 
+        C_mod = A_g * B_g
+        C_mastro_2 = mastro._mastrovito_mult(A_constant, B)
+        value = 0
+        for b in C_mastro_2.tobytes():
+            value = (value << 1) | (b & 1)   # b & 1 ensures 0/1 even if b is boolean
+        C_mastro = gal_field(value)
 
         err_msg = f"Multiplication of {A_constant:0{mastro.gf_degree}b}*{B:0{mastro.gf_degree}b} mod {mastro.gf_field.irreducible_poly} \n \
-        using {mastro.get_mastrovito(A_constant)}"
-        np.testing.assert_array_equal(C_mastro, C_mod, err_msg=err_msg)
+        using {mastro.get_mastrovito(A_constant)} produced {C_mastro_2}"
+        assert C_mastro == C_mod, err_msg
 
-    loger.info(f"PASS | Parameters> gf_degree:{gf_degree}, A_constant:{A_constant}, g_poly:{g_poly}")
+    logger.info(f"PASS | Parameters> gf_degree:{gf_degree}, A_constant:{A_constant}, g_poly:{g_poly}")

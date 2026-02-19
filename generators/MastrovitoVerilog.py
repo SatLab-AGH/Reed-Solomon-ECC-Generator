@@ -1,7 +1,7 @@
 import logging
 from logging.handlers import RotatingFileHandler
 import unittest
-import Mastrovito
+from generators import Mastrovito
 import json
 import datetime
 import os
@@ -17,7 +17,7 @@ formatter = logging.Formatter(
 handle.setFormatter(formatter)
 logger.addHandler(handle)
 
-class MastrovitoVerilog(Mastrovito.MastrovitoMatrixGenerator):
+class MastrovitoVerilogGenerator(Mastrovito.MastrovitoMatrixGenerator):
     """
     Class for transforming Mastrovito multiplication matrix into verilog zero latency multiply and add module.
     """
@@ -190,7 +190,8 @@ class MastrovitoVerilog(Mastrovito.MastrovitoMatrixGenerator):
             f'// Degree: {self.gf_degree}\n' + \
             f'// Constant Multiplicants: {self.config["constant_multplicants"]}\n' + \
             f'// Additional Comments: {self.config["additional_comments"]}\n' + \
-            f'{"//" * 20} \n\r\n\r'
+            f'{"//" * 20} \n\r\n\r' + \
+            f'`timescale 1ns/1ps'
     
     def print_verilog_file(self):
         file_name = f'{self.config["design_name"]}_Deg{self.config["gf_degree"]}.v'
@@ -211,6 +212,6 @@ class MastrovitoVerilog(Mastrovito.MastrovitoMatrixGenerator):
             
 if __name__ == '__main__':
     
-    mastroVer = MastrovitoVerilog()
+    mastroVer = MastrovitoVerilogGenerator()
 
     mastroVer.print_verilog_file()

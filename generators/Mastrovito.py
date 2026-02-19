@@ -95,7 +95,7 @@ class MastrovitoMatrixGenerator:
 
         C_mastro = self.gf2_field(self.mastrovito_matrix) @ B_gf2
         
-        return C_mastro
+        return C_mastro[::-1]
     
     def _crosscheck_with_modulo(self, A:int, B: int) -> tuple[np.ndarray, np.ndarray]:
         

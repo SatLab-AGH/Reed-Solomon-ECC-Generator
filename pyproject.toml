@@ -5,13 +5,19 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "bitarray>=3.8.0",
+    "cocotb>=2.0.1",
+    "cocotb-test>=0.2.6",
+    "cocotbext-axi>=0.1.26",
     "galois>=0.4.10",
     "numpy>=2.3.5",
     "pytest>=9.0.2",
     "pytest-randomly>=4.0.1",
+    "pytest-xdist>=3.8.0",
 ]
 
 [tool.pytest.ini_options]
 # Specifies the directories pytest should search for tests
 testpaths = ["tests"]
 python_files = ["*.py"]
+
