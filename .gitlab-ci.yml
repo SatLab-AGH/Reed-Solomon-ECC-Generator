@@ -29,10 +29,10 @@ test:
     - mkdir ./logs
     - chmod +x ./scripts/score_regr.sh   # ensure it's executable
     - ./scripts/score_regr.sh
-  # artifacts:
-  #   paths:
-  #     - logs/               # if you want to keep simulation logs
-  #   when: always
+  artifacts:
+    paths:
+      - ./logs/               # if you want to keep simulation logs
+    when: always
 
 # Security jobs are already provided by the templates – do not redefine them.
 # They will run in their respective stages.
