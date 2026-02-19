@@ -40,7 +40,7 @@ async def dff_simple_test(dut):
         "A",[245, 999, 1, 2, 3, 512],
 )
 def test_runner(A):
-    # _generator.print_verilog_file()
+    _generator.print_verilog_file()
 
     sim = os.getenv("SIM", "icarus")
 
