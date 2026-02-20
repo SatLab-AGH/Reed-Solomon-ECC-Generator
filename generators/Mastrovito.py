@@ -1,13 +1,13 @@
-from dataclasses import dataclass
+import logging
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
+
 import galois
 import numpy as np
 from numpy.typing import ArrayLike
-import logging
-from logging.handlers import RotatingFileHandler
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARN)
+logger.setLevel(logging.WARNING)
 proj_path = Path(__file__).resolve().parent.parent
 handle = RotatingFileHandler(
     proj_path.joinpath("logs/mastrovito.log"), maxBytes=5 * 1024 * 1024, backupCount=3
@@ -23,10 +23,10 @@ class MastrovitoMatrixGenerator:
     """
     Calculates Mastrovito matrix to perform GF multiplication using only parralel XOR gates
     https://www.iiis.org/cds2010/cd2010imc/ccct_2010/paperspdf/ta999ne.pdf
-    https://cetinkayakoc.net/docs/c18.pdf
+    https://cetinkayakoc.net/docs/c18.pdf.
     """
 
-    def __init__(self, degree=8, irreducible_poly_coeffs=None):
+    def __init__(self, degree=8, irreducible_poly_coeffs=None) -> None:
 
         self.gf_degree = degree
         self.gf2_field = galois.GF(2, 1)
@@ -54,7 +54,7 @@ class MastrovitoMatrixGenerator:
         P_ext = self.gf_field.irreducible_poly
 
         for i in range(self.gf_degree, 2 * self.gf_degree):
-            x_coeffs = np.zeros((2 * self.gf_degree))
+            x_coeffs = np.zeros(2 * self.gf_degree)
             x_coeffs[-i - 1] = 1
             x_power_poly = galois.Poly(x_coeffs, self.gf2_field)
             reduced_power = x_power_poly % P_ext
@@ -78,13 +78,12 @@ class MastrovitoMatrixGenerator:
                     T_i += reduction_matrix[j - self.gf_degree]
 
             T_i_coeff = np.concatenate(
-                [np.ndarray((self.gf_degree - len(T_i.coeffs))), T_i.coeffs]
+                [np.ndarray(self.gf_degree - len(T_i.coeffs)), T_i.coeffs]
             )
 
             mastrovito_matrix[i] = T_i_coeff
 
-        mastrovito_matrix = np.rot90(mastrovito_matrix)
-        return mastrovito_matrix
+        return np.rot90(mastrovito_matrix)
 
     def get_mastrovito(self, A: int) -> np.ndarray:
 
