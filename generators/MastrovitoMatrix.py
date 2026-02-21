@@ -1,6 +1,7 @@
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from typing import Required, TypedDict
 
 import galois
 import numpy as np
@@ -19,6 +20,11 @@ handle.setFormatter(formatter)
 logger.addHandler(handle)
 
 
+class MastrovitoMatrixParameters(TypedDict):
+    degree: Required[int]
+    irreducible_poly_coeffs: Required[np.ndarray]
+
+
 class MastrovitoMatrixGenerator:
     """
     Calculates Mastrovito matrix to perform GF multiplication using only parralel XOR gates
@@ -26,16 +32,12 @@ class MastrovitoMatrixGenerator:
     https://cetinkayakoc.net/docs/c18.pdf.
     """
 
-    def __init__(self, degree=8, irreducible_poly_coeffs=None) -> None:
+    def __init__(self, params: MastrovitoMatrixParameters) -> None:
 
-        self.gf_degree = degree
+        self.gf_degree = params["degree"]
         self.gf2_field = galois.GF(2, 1)
-
-        if irreducible_poly_coeffs is None:
-            self.gf_field = galois.GF(2, degree)
-        else:
-            irreducible_poly = galois.Poly(irreducible_poly_coeffs, self.gf2_field)
-            self.gf_field = galois.GF(2, degree, irreducible_poly=irreducible_poly)
+        irreducible_poly = galois.Poly(params["irreducible_poly_coeffs"], self.gf2_field)
+        self.gf_field = galois.GF(2, self.gf_degree, irreducible_poly=irreducible_poly)
 
         self.mastrovito_matrix = None
 
@@ -64,7 +66,7 @@ class MastrovitoMatrixGenerator:
 
         return reduction_matrix
 
-    def _calculate_mastrovito_matrix(self, A: int, reduction_matrix: np.ndarray):
+    def _calculate_mastrovito_matrix(self, A: int, reduction_matrix: np.ndarray) -> np.matrix:
 
         mastrovito_matrix = galois.GF2.Zeros((self.gf_degree, self.gf_degree))
 
@@ -83,16 +85,13 @@ class MastrovitoMatrixGenerator:
 
             mastrovito_matrix[i] = T_i_coeff
 
-        return np.rot90(mastrovito_matrix)
+        return np.matrix(np.rot90(mastrovito_matrix))
 
-    def get_mastrovito(self, A: int) -> np.ndarray:
+    def get_mastrovito(self, A: int) -> np.matrix:
 
         reduction_matrix = self._calculate_reduction_matrix()
 
-        mastrovito_matrix = self._calculate_mastrovito_matrix(A, reduction_matrix)
-
-        assert isinstance(mastrovito_matrix, galois.GF2)
-        return mastrovito_matrix
+        return self._calculate_mastrovito_matrix(A, reduction_matrix)
 
     def _mastrovito_mult(self, A: int, B: int | ArrayLike) -> np.ndarray:
         mastrovito_matrix = self.get_mastrovito(A)

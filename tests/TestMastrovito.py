@@ -4,7 +4,7 @@ import random
 import galois
 import pytest
 
-from generators.Mastrovito import MastrovitoMatrixGenerator
+from generators.MastrovitoMatrix import MastrovitoMatrixGenerator, MastrovitoMatrixParameters
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ def generate_params(count):
     for _ in range(count):
         degree = 10
         # Use the seeded rng instance
-        a_const = random.randint(0, 2**degree-1)
+        a_const = random.randint(0, 2**degree - 1)
         # Galois library uses the global numpy/random state, 
         # but we can specify the method
         poly = galois.irreducible_poly(2, degree, method="random")
@@ -31,7 +31,8 @@ pytestmark = pytest.mark.parametrize(
 
 
 def test_MastrovitoMatrixGenerator(gf_degree, A_constant, g_poly: galois.Poly):
-    mastro = MastrovitoMatrixGenerator(gf_degree, g_poly.coeffs.tolist())
+    params = MastrovitoMatrixParameters(degree=gf_degree, irreducible_poly_coeffs=g_poly.coefficients())
+    mastro = MastrovitoMatrixGenerator(params)
     gal_field = mastro.gf_field
     gf_max = 1 << gf_degree
 

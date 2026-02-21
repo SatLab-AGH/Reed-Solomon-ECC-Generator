@@ -1,2 +1,2 @@
 source ./.venv/bin/activate
-pytest -n auto
+pytest -n auto --dist loadfile

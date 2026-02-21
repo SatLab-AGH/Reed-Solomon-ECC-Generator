@@ -4,8 +4,11 @@ import logging
 import pathlib
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from typing import Required
 
-from generators import Mastrovito
+import numpy as np
+
+from generators.MastrovitoMatrix import MastrovitoMatrixGenerator, MastrovitoMatrixParameters
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -20,29 +23,29 @@ handle.setFormatter(formatter)
 logger.addHandler(handle)
 
 
-class MastrovitoVerilogGenerator(Mastrovito.MastrovitoMatrixGenerator):
+class MastrovitoVerilogParameters(MastrovitoMatrixParameters):
+    output_path: Required[pathlib.Path]
+    constant_multplicants: Required[list[int]]
+
+
+class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator):
     """
     Class for transforming Mastrovito multiplication matrix into verilog zero latency multiply and add module.
     """
 
-    def __init__(self):
+    def __init__(self, params: MastrovitoVerilogParameters):
         logger.info("Loading config")
         self._load_config()
-        degree = None
-        if self.config["gf_degree"] is not None:
-            degree = self.config["gf_degree"]
-        assert degree is not None
-
-        irreducible_poly = None
-        if len(self.config["irreducible_poly"]):
-            irreducible_poly = self.config["irreducible_poly"]
+        super().__init__(params)
+        
+        self.config["path"] = params["output_path"]
+        self.config["gf_degree"] = params["degree"]
+        self.config["constant_multplicants"] = params["constant_multplicants"]
 
         logger.info(
-            f"Initializing Mastrovito matrix generator with degree {degree}"
-            f" and irreducible polynomial {irreducible_poly}"
+            f"Initializing Mastrovito matrix generator with degree {params["degree"]}"
+            f" and irreducible polynomial {params["irreducible_poly_coeffs"]}"
         )
-
-        super().__init__(degree, irreducible_poly)
 
     def _load_config(self, path=None):
         path = pathlib.Path(__file__).parent.resolve() if path is None else path
@@ -66,9 +69,10 @@ class MastrovitoVerilogGenerator(Mastrovito.MastrovitoMatrixGenerator):
     def _generate_mult_function_foot():
         return "    end\n" + "endfunction\n\n"
 
-    def _generate_mult_function_body(self, mastrovito_matrix):
+    def _generate_mult_function_body(self, mastrovito_matrix: np.matrix):
         output_str: str = ""
-        for row_indx, mastr_row in enumerate(mastrovito_matrix):
+        for row_indx, mastr_row_matrix in enumerate(mastrovito_matrix):
+            mastr_row = np.array(mastr_row_matrix).flatten()
             output_line_head: str = f"        {self.func_name}[{row_indx}] = "
             output_line_body: str = ""
             for col_indx, mastr_elem in enumerate(mastr_row):
@@ -80,6 +84,8 @@ class MastrovitoVerilogGenerator(Mastrovito.MastrovitoMatrixGenerator):
                     # Makes output xor'ing matrixlike alligned
                     output_line_body += f"  {' ' * len(str(col_indx))} "
                     output_line_body += "   "
+            if not any(mastr_row):
+                output_line_body = "0"
 
             output_str += output_line_head + output_line_body + ";\n"
 
@@ -151,8 +157,8 @@ class MastrovitoVerilogGenerator(Mastrovito.MastrovitoMatrixGenerator):
         )
 
     @staticmethod
-    def _generate_module_foot():
-        return "\n" + "endmodule;\n"
+    def _generate_module_foot() -> str:
+        return ("\n" + "endmodule;\n")
 
     def _generate_module_body(self, multiplicants):
         logger.info("Generating module body")
@@ -168,7 +174,7 @@ class MastrovitoVerilogGenerator(Mastrovito.MastrovitoMatrixGenerator):
 
         outstring += self._generate_sum_if(self.gf_degree)
 
-        outstring += "endgenerate\n"
+        outstring += "endgenerate\n\n"
 
         return outstring
 
@@ -220,6 +226,12 @@ class MastrovitoVerilogGenerator(Mastrovito.MastrovitoMatrixGenerator):
 
 
 if __name__ == "__main__":
-    mastroVer = MastrovitoVerilogGenerator()
+    params: MastrovitoVerilogParameters = {
+        "degree": 10,
+        "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
+        "output_path": Path("rtl"),
+        "constant_multplicants": [0, 1, 2, 6, 511, 513, 1023]
+    }
+    mastroVer = MastrovitoVerilogGenerator(params)
 
     mastroVer.print_verilog_file()
