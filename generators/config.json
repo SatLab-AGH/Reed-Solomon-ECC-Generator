@@ -6,8 +6,5 @@
     "project_name": "DZIDA",
     "description": "Zero Latency Galois Field 2^n multiplication and addition module for custom Reed Solomon Encoding",
     "dependencies": "None",
-    "additional_comments": "",
-    "gf_degree": 10,
-    "irreducible_poly": [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
-    "constant_multplicants": [245, 999, 1, 2, 3, 512]
+    "additional_comments": ""
   }
