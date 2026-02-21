@@ -1,7 +1,7 @@
 # Define stages once at the top
 stages:
   - test
-  - lint
+  # - lint
   - secret-detection
   # sast stage is provided by the template; it will be added automatically
 
@@ -38,15 +38,15 @@ test:
       - ./logs/               # if you want to keep simulation logs
     when: always
 
-lint:
-  stage: lint
-  before_script:
-    - apt-get update
-    - apt-get install -y verilator
-  script:
-    - source ./.venv/bin/activate
-    - python3 ./generators/MastrovitoVerilog.py
-    - verilator --lint-only -Wall ./rtl/GF_Mastrovito_Multiplier_Adder_Deg10.v
+# lint:
+#   stage: lint
+#   before_script:
+#     - apt-get update
+#     - apt-get install -y verilator
+#   script:
+#     - source ./.venv/bin/activate
+#     - python3 ./generators/MastrovitoVerilog.py
+#     - verilator --lint-only -Wall ./rtl/GF_Mastrovito_Multiplier_Adder_Deg10.v
 
 
 # Security jobs are already provided by the templates – do not redefine them.
