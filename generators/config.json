@@ -2,9 +2,5 @@
     "path": "rtl",
     "company": "SatLab AGH",
     "engineer": "Jan Rosa",
-    "design_name": "GF_Mastrovito_Multiplier_Adder",
-    "project_name": "DZIDA",
-    "description": "Zero Latency Galois Field 2^n multiplication and addition module for custom Reed Solomon Encoding",
-    "dependencies": "None",
-    "additional_comments": ""
+    "project_name": "DZIDA"
   }

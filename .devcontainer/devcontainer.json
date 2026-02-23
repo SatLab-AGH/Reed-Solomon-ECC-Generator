@@ -17,7 +17,8 @@
         "ms-vscode.makefile-tools",
         "mhutchie.git-graph",
         "charliermarsh.ruff",
-        "tamasfe.even-better-toml"
+        "tamasfe.even-better-toml",
+        "mshr-h.veriloghdl"
       ]
     }
   },

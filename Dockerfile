@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y \
     git \
     ca-certificates \
     build-essential \
+    graphviz \
+    gtkwave \
+    yosys \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv (fast Python package manager)

@@ -9,11 +9,15 @@ dependencies = [
     "cocotb>=2.0.1",
     "cocotb-test>=0.2.6",
     "cocotbext-axi>=0.1.26",
+    "edalize>=0.6.5",
     "galois>=0.4.10",
     "numpy>=2.3.5",
     "pytest>=9.0.2",
     "pytest-randomly>=4.0.1",
     "pytest-xdist>=3.8.0",
+    "reedsolo>=1.7.0",
+    "vunit-hdl>=4.7.1",
+    "yowasp-yosys>=0.62.0.0.post1088",
 ]
 
 [tool.pytest.ini_options]

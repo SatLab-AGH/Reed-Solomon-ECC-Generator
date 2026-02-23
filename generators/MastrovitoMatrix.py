@@ -5,7 +5,7 @@ from typing import Required, TypedDict
 
 import galois
 import numpy as np
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -21,7 +21,7 @@ logger.addHandler(handle)
 
 
 class MastrovitoMatrixParameters(TypedDict):
-    degree: Required[int]
+    gf_degree: Required[int]
     irreducible_poly_coeffs: Required[np.ndarray]
 
 
@@ -34,10 +34,10 @@ class MastrovitoMatrixGenerator:
 
     def __init__(self, params: MastrovitoMatrixParameters) -> None:
 
-        self.gf_degree = params["degree"]
+        self.gf_degree = params["gf_degree"]
         self.gf2_field = galois.GF(2, 1)
-        irreducible_poly = galois.Poly(params["irreducible_poly_coeffs"], self.gf2_field)
-        self.gf_field = galois.GF(2, self.gf_degree, irreducible_poly=irreducible_poly)
+        self.irreducible_poly = galois.Poly(params["irreducible_poly_coeffs"], self.gf2_field)
+        self.gf_field = galois.GF(2, self.gf_degree, irreducible_poly=self.irreducible_poly)
 
         self.mastrovito_matrix = None
 
@@ -66,9 +66,9 @@ class MastrovitoMatrixGenerator:
 
         return reduction_matrix
 
-    def _calculate_mastrovito_matrix(self, A: int, reduction_matrix: np.ndarray) -> np.matrix:
+    def _calculate_mastrovito_matrix(self, A: int, reduction_matrix: NDArray) -> NDArray:
 
-        mastrovito_matrix = galois.GF2.Zeros((self.gf_degree, self.gf_degree))
+        mastrovito_matrix: NDArray = galois.GF2.Zeros((self.gf_degree, self.gf_degree))
 
         for i in range(self.gf_degree):
             A_ext = int(A) << i
@@ -79,15 +79,15 @@ class MastrovitoMatrixGenerator:
                     T_i += galois.Poly.Int((1 << j), self.gf2_field)
                     T_i += reduction_matrix[j - self.gf_degree]
 
-            T_i_coeff = np.concatenate(
+            T_i_coeff: np.ndarray = np.concatenate(
                 [np.ndarray(self.gf_degree - len(T_i.coeffs)), T_i.coeffs]
             )
 
             mastrovito_matrix[i] = T_i_coeff
 
-        return np.matrix(np.rot90(mastrovito_matrix))
+        return np.rot90(mastrovito_matrix)
 
-    def get_mastrovito(self, A: int) -> np.matrix:
+    def get_mastrovito(self, A: int) -> NDArray:
 
         reduction_matrix = self._calculate_reduction_matrix()
 
