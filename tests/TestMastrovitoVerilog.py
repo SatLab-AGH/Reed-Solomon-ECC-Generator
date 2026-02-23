@@ -21,7 +21,10 @@ logger = logging.getLogger(__name__)
 
 constant_multiplicants = [random.randint(0, 1023) for _ in range(20)]
 params: MastrovitoVerilogParameters = {
-    "degree": 10,
+    "design_name": "GF_Mastrovito_Multiplier_Adder",
+    "description": "Zero Latency Galois Field 2^n multiplication "
+        + "and addition module for custom Reed Solomon Encoding",
+    "gf_degree": 10,
     "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
     "output_path": Path("rtl"),
     "constant_multplicants": list(constant_multiplicants)
@@ -75,5 +78,5 @@ def test_runner(A):
 
     runner.test(
         hdl_toplevel="GF_Mastrovito_Multiplier_Adder_Deg10",
-        test_module="tests.TestMastrovitoVerilogGenerator",
+        test_module="tests.TestMastrovitoVerilog",
     )

@@ -1,5 +1,3 @@
-import datetime
-import json
 import logging
 import pathlib
 from logging.handlers import RotatingFileHandler
@@ -7,8 +5,10 @@ from pathlib import Path
 from typing import Required
 
 import numpy as np
+from numpy.typing import NDArray
 
 from generators.MastrovitoMatrix import MastrovitoMatrixGenerator, MastrovitoMatrixParameters
+from generators.ModuleVerilog import ModuleVerilogGenerator, ModuleVerilogParameters
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -23,44 +23,36 @@ handle.setFormatter(formatter)
 logger.addHandler(handle)
 
 
-class MastrovitoVerilogParameters(MastrovitoMatrixParameters):
-    output_path: Required[pathlib.Path]
+class MastrovitoVerilogParameters(ModuleVerilogParameters, MastrovitoMatrixParameters):
     constant_multplicants: Required[list[int]]
 
 
-class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator):
+class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerator):
     """
     Class for transforming Mastrovito multiplication matrix into verilog zero latency multiply and add module.
     """
 
     def __init__(self, params: MastrovitoVerilogParameters):
         logger.info("Loading config")
-        self._load_config()
+        self.params = params
         super().__init__(params)
-        
-        self.config["path"] = params["output_path"]
-        self.config["gf_degree"] = params["degree"]
-        self.config["constant_multplicants"] = params["constant_multplicants"]
+        self._load_global_config()
+        self.params["design_name"] += f"_Deg{params["gf_degree"]}"
+        self.params["specific_params"] = \
+            f"\n//    irreducible_poly_coeffs: {self.params["irreducible_poly_coeffs"]}"\
+            f"\n//    constant_multplicants: {self.params["constant_multplicants"]}\n"
 
         logger.info(
-            f"Initializing Mastrovito matrix generator with degree {params["degree"]}"
+            f"Initializing Mastrovito matrix generator with degree {params["gf_degree"]}"
             f" and irreducible polynomial {params["irreducible_poly_coeffs"]}"
         )
-
-    def _load_config(self, path=None):
-        path = pathlib.Path(__file__).parent.resolve() if path is None else path
-        file_string = ""
-        with Path.open(Path.joinpath(path, "config.json")) as file:
-            file_string = file.read()
-        self.config = json.loads(file_string)
-        self.config["create_date"] = datetime.datetime.now()
 
     # Functions
 
     def _generate_mult_function_header(self, A, degree):
         self.func_name = f"GF2_Deg{degree}_const_mult_by_{A}"
         return (
-            f"function automatic [{degree - 1}:0]{self.func_name};\n"
+            f"function [{degree - 1}:0]{self.func_name};\n"
             + f"    input [{degree - 1}:0] Z;\n"
             + "    begin\n"
         )
@@ -69,7 +61,7 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator):
     def _generate_mult_function_foot():
         return "    end\n" + "endfunction\n\n"
 
-    def _generate_mult_function_body(self, mastrovito_matrix: np.matrix):
+    def _generate_mult_function_body(self, mastrovito_matrix: NDArray):
         output_str: str = ""
         for row_indx, mastr_row_matrix in enumerate(mastrovito_matrix):
             mastr_row = np.array(mastr_row_matrix).flatten()
@@ -103,17 +95,18 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator):
     @staticmethod
     def _generate_add_function(degree) -> str:
         return (
-            f"function automatic [{degree - 1}:0]GF2_Deg{degree}_add;\n"
+            f"function [{degree - 1}:0]GF2_Deg{degree}_add;\n"
             + f"    input [{degree - 1}:0] add1;\n"
             + f"    input [{degree - 1}:0] add2;\n"
             + "    begin\n"
-            + "        return add1^add2;\n"
+            + f"        GF2_Deg{degree}_add=add1^add2;\n"
             + "    end\n"
             + "endfunction\n\n"
         )
 
     def _generate_all_functions(self, multiplicants):
         outstring = "//Generated Functions\n\n"
+        multiplicants = list(set(multiplicants))
 
         outstring += self._generate_add_function(self.gf_degree)
 
@@ -140,7 +133,7 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator):
     def _generate_module_header(self):
         logger.info("Generating module header")
         return (
-            f"module {self.config['design_name']}_Deg{self.config['gf_degree']} #\n"
+            f"module {self.params['design_name']} #\n"
             + "(\n"
             + "    parameter GF_CONST_MULT = 1\n"
             + ")\n"
@@ -156,13 +149,14 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator):
             + "\n"
         )
 
-    @staticmethod
-    def _generate_module_foot() -> str:
-        return ("\n" + "endmodule;\n")
+    def _generate_module_foot(self) -> str:  # noqa: PLR6301
+        return ("\n" + "endmodule\n")
 
     def _generate_module_body(self, multiplicants):
         logger.info("Generating module body")
         outstring = "generate\n" + "\n"
+
+        multiplicants = list(set(multiplicants))
 
         for multiplicant in multiplicants:
             outstring += self._generate_mult_if(multiplicant, self.gf_degree)
@@ -185,40 +179,32 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator):
             + self._generate_module_body(multiplicants)
             + self._generate_module_foot()
         )
-
-    # File
-
-    def _generate_file_header(self):
-        return (
-            f"{'//' * 20}\n"
-            + f"// Company: {self.config['company']}\n"
-            + f"// Engineer: {self.config['engineer']}\n"
-            + f"// Create Date: {self.config['create_date']}\n"
-            + f"// Design Name: {self.config['design_name']}_Deg{self.config['gf_degree']}\n"
-            + f"// Project Name: {self.config['project_name']}\n"
-            + f"// Description: {self.config['description']}\n"
-            + f"// Dependencies: {self.config['dependencies']}\n"
-            + "//\n"
-            + "// Design Specific Parameters: \n"
-            + f"// Irreducible Polynomial: {self.gf_field.irreducible_poly}\n"
-            + f"// Degree: {self.gf_degree}\n"
-            + f"// Constant Multiplicants: {self.config['constant_multplicants']}\n"
-            + f"// Additional Comments: {self.config['additional_comments']}\n"
-            + f"{'//' * 20} \n\r\n\r"
-            + "`timescale 1ns/1ps"
+    
+    def _generate_file_header(self) -> str:
+        template = self._generate_file_header_template()
+        config = self.params
+        return template.format(
+            company=config["company"],  # type: ignore
+            engineer=config["engineer"],  # type: ignore
+            create_date=config["create_date"],  # type: ignore
+            design_name=config["design_name"],  # type: ignore
+            project_name=config["project_name"],  # type: ignore
+            description=config["description"],  # type: ignore
+            dependencies=None,  # type: ignore
+            specific_params=config["specific_params"],  # type: ignore
+            additional_comments=None,  # type: ignore
         )
-
+    
     def print_verilog_file(self):
-        file_name = f"{self.config['design_name']}_Deg{self.config['gf_degree']}.v"
+        file_name = f"{self.params['design_name']}.v"
 
-        path = proj_path.joinpath(self.config["path"])
+        path = proj_path.joinpath(self.params["output_path"])
+        multiplicants = self.params["constant_multplicants"]
+        multiplicants.sort()
 
         Path(path).mkdir(exist_ok=True, parents=True)
 
-        multiplicants = self.config["constant_multplicants"]
-        multiplicants.sort()
-
-        with Path.open(pathlib.Path.joinpath(path, file_name), "w") as file:
+        with Path.open(Path.joinpath(path, file_name), "w") as file:
             logger.info(f"Generating Verilog File: {path}")
             file.write(self._generate_file_header())
 
@@ -227,10 +213,13 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator):
 
 if __name__ == "__main__":
     params: MastrovitoVerilogParameters = {
-        "degree": 10,
+        "design_name": "GF_Mastrovito_Multiplier_Adder",
+        "description": "Zero Latency Galois Field 2^n multiplication "   
+            + "and addition module for custom Reed Solomon Encoding",
+        "gf_degree": 10,
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
         "output_path": Path("rtl"),
-        "constant_multplicants": [0, 1, 2, 6, 511, 513, 1023]
+        "constant_multplicants": [0, 1, 2, 6, 511, 513, 1023],
     }
     mastroVer = MastrovitoVerilogGenerator(params)
 
