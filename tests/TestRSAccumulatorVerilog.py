@@ -1,23 +1,22 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import logging
 import os
 import random
+from dataclasses import dataclass
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-
-import reedsolo as rs
 
 import cocotb
 import numpy as np
 import pytest
+import reedsolo as rs
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, Timer
 from cocotb_tools.runner import get_runner
 
 from generators.RSAccumulatorVerilog import RSAccumulatorVerilogGenerator, RSAccumulatorVerilogParameters
-from generators.RSSegmentVerilog import RSSegmentVerilogGenerator, RSSegmentVerilogParameters
+from generators.RSSegmentVerilog import RSSegmentVerilogParameters
 
 logger = logging.getLogger("cocotb.segment")
 logger.setLevel(logging.INFO)
@@ -31,8 +30,10 @@ formatter = logging.Formatter(
 handle.setFormatter(formatter)
 logger.addHandler(handle)
 
+
 def hexlist(lst, width=2, prefix='', sep=' '):
     return sep.join(f"{prefix}{x:0{width}x}" for x in lst)
+
 
 seg_params: RSSegmentVerilogParameters = {
     "design_name": "RS_Segment",
@@ -56,24 +57,27 @@ _generator = RSAccumulatorVerilogGenerator(acc_params)
 
 
 @dataclass()
-class RSInputData():
+class RSInputData:
     data: np.ndarray
     ecc_len: int
+
     def __len__(self):
         return len(self.data)
 
+
 @dataclass
-class RSOutputData():
+class RSOutputData:
     data: np.ndarray
     ecc: np.ndarray
 
     def __len__(self):
         return len(self.data) + len(self.ecc)
     
+
 def validate_RS_ECC(rs_data_in: RSInputData, rs_data_out: RSOutputData):
     gf_poly_coeffs = _generator.segment_generator.irreducible_poly._integer
     ecc_len = rs_data_in.ecc_len          # number of parity symbols
-    c_exp = 10                            # 10‑bit symbols → GF(2^10)
+    c_exp = 10                            # 10-bit symbols → GF(2^10)
 
     rsc = rs.RSCodec(ecc_len, c_exp=c_exp, prim=gf_poly_coeffs)
     logger.debug(f"Using rsc {rsc.gen}")
@@ -86,7 +90,8 @@ def validate_RS_ECC(rs_data_in: RSInputData, rs_data_out: RSOutputData):
 
 
 async def accumulator_driver(dut, rs_data_in: RSInputData):
-    logger.info(f"Starting segment driver with data of length {len(rs_data_in)} and ECC length {rs_data_in.ecc_len}")
+    logger.info(f"Starting segment driver with data of length {len(rs_data_in)}"
+                "and ECC length {rs_data_in.ecc_len}")
 
     for word in rs_data_in.data:
         dut.feedback.value = 1
@@ -127,18 +132,14 @@ async def RS_Accumulator_random(dut):
 
     ecc_len = _generator.params["n_parity_sym"]
     rs_data_in = RSInputData(np.array([random.randint(0, 1023) for _ in range(ecc_len)], dtype=int), ecc_len)
-    # rs_data_in = RSInputData(np.array([1, 2, 4, 5, 6], dtype=int), ecc_len)
 
     clock = Clock(dut.clk, 1000)
     
-    # Start the clock in the background – do NOT await it
     cocotb.start_soon(clock.start(start_high=False))
     
-    # Start driver and overseer concurrently
     driver = cocotb.start_soon(accumulator_driver(dut, rs_data_in))
     overseer = cocotb.start_soon(accumulator_overseer(dut, rs_data_in))
     
-    # Wait for both to finish (they will run in parallel with the clock)
     await driver
     rs_data_out = await overseer
 

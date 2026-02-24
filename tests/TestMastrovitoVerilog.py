@@ -34,7 +34,7 @@ _generator = MastrovitoVerilogGenerator(params)
 
 @pytest.fixture(scope="session", autouse=True)
 def setup():
-    _generator.print_verilog_file()
+    _generator.generate_to_file()
 
 
 @cocotb.test()

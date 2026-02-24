@@ -1,11 +1,12 @@
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import NotRequired, Required
+from typing import Required, override
 
 import numpy as np
 
 from generators.MastrovitoVerilog import MastrovitoVerilogGenerator, MastrovitoVerilogParameters
+from generators.ModuleVerilog import ModuleInterface, ModuleParameter
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -36,29 +37,28 @@ class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
             + f"    assign P = GF2_Deg{degree}_const_mult_by_{A}(RS_Backward_I);\n"
             + "end else "
         )
-    
+
     @staticmethod
     def _generate_sum_if(degree):
         return "\n" + f"assign PS = GF2_Deg{degree}_add(P, RS_Forward_I);\n" + "\n"
 
-    def _generate_module_header(self):
+    def _generate_module_header(self) -> str:
+        parameters = [ModuleParameter(str("GF_CONST_MULT"), None, 1)]
+        interfaces = [
+            (
+                ModuleInterface("clk", "i"),
+                ModuleInterface("RS_Backward_I", "i", self.gf_degree),
+                ModuleInterface("RS_Backward_O", "o", self.gf_degree),
+                ModuleInterface("RS_Forward_O", "o", self.gf_degree),
+                ModuleInterface("RS_Forward_I", "i", self.gf_degree),
+            )
+        ]
+        return self.generic_generate_module_header(interfaces, parameters)
+
+    def _generate_net(self):
         logger.info("Generating module header")
         return (
-            f"module {self.params['design_name']} #\n"
-            + "(\n"
-            + "    parameter GF_CONST_MULT = 1\n"
-            + ")\n"
-            + "(\n"
-            + "    input wire clk,\n"
-            + f"    input wire [{self.gf_degree - 1}:0]  RS_Backward_I,\n"
-            + f"    output wire [{self.gf_degree - 1}:0] RS_Backward_O,\n"
-            + f"    output wire [{self.gf_degree - 1}:0]  RS_Forward_O,\n"
-            + f"    input wire [{self.gf_degree - 1}:0] RS_Forward_I\n"
-            + ");\n"
-            + "// RS_Backward_O = RS_Backward_I \n"
-            + "// RS_Forward_O = RS_Backward_I * GF_CONST_MULT + RS_Forward_I\n"
-            + "\n"
-            + f"wire [{self.gf_degree - 1}:0]P;\n"
+            f"wire [{self.gf_degree - 1}:0]P;\n"
             + f"wire [{self.gf_degree - 1}:0]PS;\n"
             + f"reg  [{self.gf_degree - 1}:0]RS_Forward_O_reg = 0;"
             + "\n"
@@ -73,7 +73,8 @@ class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
             + "end // always\n"
             + "\n"
         )
-    
+
+    @override
     def _generate_module_foot(self) -> str:
         return (
             "assign RS_Forward_O = RS_Forward_O_reg;\n"
@@ -81,16 +82,17 @@ class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
             + "\n"
             + "endmodule\n"
         )
-    
+
     def _generate_module(self, multiplicants):
         return (
             self._generate_module_header()
+            + self._generate_net()
             + self._generate_all_functions(multiplicants)
             + self._generate_module_body(multiplicants)
             + self._generate_module_synchronous()
             + self._generate_module_foot()
         )
-        
+
 
 if __name__ == "__main__":
     params: RSSegmentVerilogParameters = {
@@ -104,4 +106,4 @@ if __name__ == "__main__":
     }
     mastroVer = RSSegmentVerilogGenerator(params)
 
-    mastroVer.print_verilog_file()
+    mastroVer.generate_to_file()

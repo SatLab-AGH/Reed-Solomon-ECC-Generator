@@ -41,14 +41,14 @@ params: RSSegmentVerilogParameters = {
 _generator = RSSegmentVerilogGenerator(params)
 
 
-async def segment_driver(dut, bi:list[int]|None=None, fi:list[int]|None=None, cycles = 100):
+async def segment_driver(dut, bi: list[int] | None = None, fi: list[int] | None = None, cycles=100):
     for i in range(cycles):
         await RisingEdge(dut.clk)
         dut.RS_Backward_I.value = random.randint(0, 1023) if bi is None else bi[i]
         dut.RS_Forward_I.value = random.randint(0, 1023) if fi is None else fi[i]
 
 
-async def segment_overseer(dut, cycles = 200):
+async def segment_overseer(dut, cycles=200):
     await Timer(10, "ps")
     A = int(dut.GF_CONST_MULT.value)
     gen_field = _generator.gf_field
@@ -57,7 +57,7 @@ async def segment_overseer(dut, cycles = 200):
         return gen_field(A_g) * gen_field(B_g) + gen_field(C_g)
     
     await RisingEdge(dut.clk)
-    for _ in range(cycles+1):
+    for _ in range(cycles + 1):
         bi = dut.RS_Backward_I.value
         fi = dut.RS_Forward_I.value
         bo = dut.RS_Backward_O.value
@@ -67,13 +67,14 @@ async def segment_overseer(dut, cycles = 200):
         logger.info(f"bi: {bi}, fi: {fi}, bo: {bo}, fo: {fo}")
 
         expected = MA_GF(A, gen_field(int(bi)), gen_field(int(fi)))
-        assert int(expected) == int(fo), f"Expected: {expected}, from dut got: {fo}, using A: {A}, bi: {bi}, fi: {fi}, bo: {bo}, fo: {fo}"
+        assert int(expected) == int(fo), f"Expected: {expected}, from dut got: {fo}, " \
+                        f"using A: {A}, bi: {bi}, fi: {fi}, bo: {bo}, fo: {fo}"
         assert bi == bo, f"Expected: {bi}, from dut got: {bo}"
 
 
 @pytest.fixture(scope="session", autouse=True)
 def setup():
-    _generator.print_verilog_file()
+    _generator.generate_to_file()
 
 
 @cocotb.test()
@@ -82,7 +83,6 @@ async def RS_Segment_Deg10_random(dut):
     clock = Clock(dut.clk, 1000)
     logger.info("Clock initialized")
     
-    # Start the clock in the background – do NOT await it
     cocotb.start_soon(clock.start())
     logger.info("Clock started.")
     driver = cocotb.start_soon(segment_driver(dut))
@@ -99,7 +99,7 @@ async def RS_Segment_Deg10_edge(dut):
     logger.info("Clock initialized")
     bi = [0, 1023, 0, 1023]
     fi = [0, 1023, 1023, 0]
-    # Start the clock in the background – do NOT await it
+
     cocotb.start_soon(clock.start())
     logger.info("Clock started.")
     driver = cocotb.start_soon(segment_driver(dut, bi=bi, fi=fi, cycles=4))

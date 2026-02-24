@@ -1,0 +1,15 @@
+////////////////////////////////////////
+// Company: {company}
+// Engineer: {engineer}
+// Create Date: {create_date}
+// Design Name: {design_name}
+// Project Name: {project_name}
+// Description: {description}
+// Dependencies: {dependencies}
+//
+// Design Specific Parameters: {specific_params}
+// Additional Comments: {additional_comments}
+////////////////////////////////////////
+
+`timescale 1ns/1ps
+

@@ -7,7 +7,7 @@ import numpy as np
 import reedsolo as rs
 
 from generators.MastrovitoMatrix import MastrovitoMatrixGenerator
-from generators.ModuleVerilog import ModuleVerilogGenerator, ModuleVerilogParameters
+from generators.ModuleVerilog import ModuleInterface, ModuleVerilogGenerator, ModuleVerilogParameters
 from generators.RSSegmentVerilog import RSSegmentVerilogGenerator, RSSegmentVerilogParameters
 
 logger = logging.getLogger(__name__)
@@ -48,30 +48,40 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
         gf_poly_coeffs = mastrovito_matrix_generator.irreducible_poly._integer
         rs.init_tables(gf_poly_coeffs, c_exp=mastrovito_matrix_generator.gf_degree)
         return list(rs.rs_generator_poly(n_parity_sym))
-    
+
     def _generate_module_header(self) -> str:
         logger.info("Generating module header")
         word_size = self.params["word_size"]
+        n_parity = self.params['n_parity_sym']
+
+        # 1. Define the port interfaces
+        interfaces = [
+            (
+                ModuleInterface("clk", "i"),
+                ModuleInterface("acc_input", "i", word_size),
+                ModuleInterface("acc_output", "o", word_size),
+                ModuleInterface("feedback", "i"),
+            )
+        ]
+
+        # 2. Generate the standard header string via the generic method
+        return self.generic_generate_module_header(interfaces)
+
+    def _generate_module_top_logic(self) -> str:
+        word_size = self.params["word_size"]
         return (
-            f"module {self.params['design_name']}"
-            + "(\n"
-            + "    input wire clk,\n"
-            + f"    input wire [{word_size - 1}:0] acc_input,\n"
-            + f"    output wire [{word_size - 1}:0] acc_output,\n"
-            + f"    input wire feedback\n"
-            + ");\n"
-            + "\n"
+            "\n"
             + f"wire [{word_size - 1}:0] BackwardBus[{self.params['n_parity_sym']}:0];\n"
             + f"wire [{word_size - 1}:0] ForwardBus[{self.params['n_parity_sym']}:0];\n"
             + f"wire [{word_size - 1}:0] backXORforw;\n"
             + "\n"
-            + f"assign backXORforw = feedback ? acc_input ^ acc_output : 0;\n"
+            + "assign backXORforw = feedback ? acc_input ^ acc_output : 0;\n"
             + "\n"
         )
 
     def _generate_module_foot(self) -> str:  # noqa: PLR6301
         return ("\n" + "endmodule\n")
-    
+
     def _generate_module_body(self):
         word_size = self.params["word_size"]
         module_body: str = ""
@@ -89,13 +99,17 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
                 bi = "backXORforw"
                 fo = "acc_output"
 
-            module_body += f"RS_Segment_Deg{word_size} # (.GF_CONST_MULT({coef})) \n" \
-            + f"RS_Segment_Deg{word_size}_{coef}_{idx} (\n" \
-            + "\t.clk(clk),\n" \
-            + f"\t.RS_Backward_I({bi}),\n" \
-            + f"\t.RS_Backward_O({bo}),\n" \
-            + f"\t.RS_Forward_I({fi}),\n" \
-            + f"\t.RS_Forward_O({fo})\n);\n\n"
+            template = self.segment_generator.generic_generate_module_instance_template()
+
+            module_body += template.format(
+                instance_name=f"{idx}",
+                GF_CONST_MULT=coef,
+                clk="clk",
+                RS_Backward_I=bi,
+                RS_Backward_O=bo,
+                RS_Forward_I=fi,
+                RS_Forward_O=fo,
+            )
 
         module_body += "// polynomial coeff 1\n" \
             f"assign ForwardBus[{len(gen_coefs) - 2}] = 0;\n\n"
@@ -105,28 +119,14 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
     def _generate_module(self):
         return (
             self._generate_module_header()
+            + self._generate_module_top_logic()
             + self._generate_module_body()
             + self._generate_module_foot()
         )
 
-    def _generate_file_header(self) -> str:
-        template = self._generate_file_header_template()
-        config = self.params
-        return template.format(
-            company=config["company"],  # type: ignore
-            engineer=config["engineer"],  # type: ignore
-            create_date=config["create_date"],  # type: ignore
-            design_name=config["design_name"],  # type: ignore
-            project_name=config["project_name"],  # type: ignore
-            description=config["description"],  # type: ignore
-            dependencies=None,  # type: ignore
-            specific_params=config["specific_params"],  # type: ignore
-            additional_comments=None,  # type: ignore
-        )
-    
     def generate(self):
-        self.print_verilog_file()
-        self.segment_generator.print_verilog_file()
+        self.segment_generator.generate_to_file()
+        self.generate_to_file()
 
 
 if __name__ == "__main__":
