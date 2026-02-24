@@ -1,3 +1,4 @@
+from copy import copy, deepcopy
 import logging
 import pathlib
 from logging.handlers import RotatingFileHandler
@@ -8,7 +9,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from generators.MastrovitoMatrix import MastrovitoMatrixGenerator, MastrovitoMatrixParameters
-from generators.ModuleVerilog import ModuleVerilogGenerator, ModuleVerilogParameters
+from generators.ModuleVerilog import ModuleInterface, ModuleParameter, ModuleVerilogGenerator, ModuleVerilogParameters
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -130,23 +131,27 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
 
     # Module
 
-    def _generate_module_header(self):
+    def _generate_module_header(self) -> str:
         logger.info("Generating module header")
+        degree = self.gf_degree
+
+        interfaces = [
+            (
+                ModuleInterface("B", "i", degree),
+                ModuleInterface("C", "i", degree),
+                ModuleInterface("PS", "o", degree),
+            )
+        ]
+        parameters = [
+            ModuleParameter("GF_CONST_MULT", default_value=1)
+        ]
+        ports_code = self.generic_generate_module_header(interfaces, parameters)
+
         return (
-            f"module {self.params['design_name']} #\n"
-            + "(\n"
-            + "    parameter GF_CONST_MULT = 1\n"
-            + ")\n"
-            + "(\n"
-            + f"    input wire [{self.gf_degree - 1}:0] B,\n"
-            + f"    input wire [{self.gf_degree - 1}:0] C,\n"
-            + f"    output wire [{self.gf_degree - 1}:0] PS\n"
-            + ");\n"
-            + "// P = GF_CONST_MULT*B "
-            + "// PS = P + C\n"
-            + "\n"
-            + f"wire [{self.gf_degree - 1}:0]P;\n"
-            + "\n"
+            f"{ports_code}"
+            f"// P = GF_CONST_MULT*B\n"
+            f"// PS = P + C\n\n"
+            f"wire [{degree - 1}:0] P;\n\n"
         )
 
     def _generate_module_foot(self) -> str:  # noqa: PLR6301
@@ -179,27 +184,12 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
             + self._generate_module_body(multiplicants)
             + self._generate_module_foot()
         )
-    
-    def _generate_file_header(self) -> str:
-        template = self._generate_file_header_template()
-        config = self.params
-        return template.format(
-            company=config["company"],  # type: ignore
-            engineer=config["engineer"],  # type: ignore
-            create_date=config["create_date"],  # type: ignore
-            design_name=config["design_name"],  # type: ignore
-            project_name=config["project_name"],  # type: ignore
-            description=config["description"],  # type: ignore
-            dependencies=None,  # type: ignore
-            specific_params=config["specific_params"],  # type: ignore
-            additional_comments=None,  # type: ignore
-        )
-    
-    def print_verilog_file(self):
+   
+    def generate_to_file(self):
         file_name = f"{self.params['design_name']}.v"
 
         path = proj_path.joinpath(self.params["output_path"])
-        multiplicants = self.params["constant_multplicants"]
+        multiplicants = deepcopy(self.params["constant_multplicants"])
         multiplicants.sort()
 
         Path(path).mkdir(exist_ok=True, parents=True)
@@ -223,4 +213,4 @@ if __name__ == "__main__":
     }
     mastroVer = MastrovitoVerilogGenerator(params)
 
-    mastroVer.print_verilog_file()
+    mastroVer.generate_to_file()

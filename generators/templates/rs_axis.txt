@@ -1,0 +1,27 @@
+wire [{word_size}-1:0] acc_output;
+reg [$clog2({n_parity_max})-1:0] n_parity_sym_nr = 0;
+reg feedback_control_reg = 0;
+
+always @(posedge ACLK) begin : feedback_control
+    casex({{feedback_control_reg, TLAST_s}})
+        2'bx1: begin
+            feedback_control_reg <= 1'b1;
+            n_parity_sym_nr <= {n_parity_max};
+        end
+        2'b10: begin
+            if (n_parity_sym_nr == 0) begin
+                feedback_control_reg <= 1'b0;
+            end else begin
+                n_parity_sym_nr <= n_parity_sym_nr - 1;
+            end
+        end
+        default: begin
+            feedback_control_reg <= 0;
+            n_parity_sym_nr <= 0;
+        end
+    endcase
+end // always
+
+assign TREADY_s = !feedback_control_reg;
+assign TVALID_m = feedback_control_reg ? 1'b1 : TVALID_s;
+assign TDATA_m = feedback_control_reg ? acc_output : TDATA_s;
