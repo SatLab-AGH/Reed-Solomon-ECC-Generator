@@ -23,5 +23,6 @@ always @(posedge ACLK) begin : feedback_control
 end // always
 
 assign TREADY_s = !feedback_control_reg;
-assign TVALID_m = feedback_control_reg ? 1'b1 : TVALID_s;
+assign TVALID_m = n_parity_sym_nr ? 1'b1 : TVALID_s;
 assign TDATA_m = feedback_control_reg ? acc_output : TDATA_s;
+assign TLAST_m = n_parity_sym_nr==1; //last parity word
