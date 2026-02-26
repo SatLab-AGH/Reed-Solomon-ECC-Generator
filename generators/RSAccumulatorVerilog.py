@@ -37,11 +37,13 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
 
         # init field first, then update coeffs
         self.segment_generator = RSSegmentVerilogGenerator(params["segment_generator_params"])
-        self.segment_generator.params["constant_multplicants"] = \
-            self.get_rs_generator_poly(self.segment_generator, params["n_parity_sym"])
+        self.segment_generator.params["constant_multplicants"] = self.get_rs_generator_poly(
+            self.segment_generator, params["n_parity_sym"]
+        )
         logger.info(f"Generator polynomial: {self.segment_generator.params['constant_multplicants']}")
-        self.params["specific_params"] = \
+        self.params["specific_params"] = (
             f"\n//    Generator polynomial: {self.segment_generator.params['constant_multplicants']}\n"
+        )
 
     @staticmethod
     def get_rs_generator_poly(mastrovito_matrix_generator: MastrovitoMatrixGenerator, n_parity_sym: int):
@@ -52,7 +54,7 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
     def _generate_module_header(self) -> str:
         logger.info("Generating module header")
         word_size = self.params["word_size"]
-        n_parity = self.params['n_parity_sym']
+        n_parity = self.params["n_parity_sym"]
 
         # 1. Define the port interfaces
         interfaces = [
@@ -80,7 +82,7 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
         )
 
     def _generate_module_foot(self) -> str:  # noqa: PLR6301
-        return ("\n" + "endmodule\n")
+        return "\n" + "endmodule\n"
 
     def _generate_module_body(self):
         word_size = self.params["word_size"]
@@ -111,8 +113,7 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
                 RS_Forward_O=fo,
             )
 
-        module_body += "// polynomial coeff 1\n" \
-            f"assign ForwardBus[{len(gen_coefs) - 2}] = 0;\n\n"
+        module_body += f"// polynomial coeff 1\nassign ForwardBus[{len(gen_coefs) - 2}] = 0;\n\n"
 
         return module_body
 
@@ -130,15 +131,14 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
 
 
 if __name__ == "__main__":
-
     seg_params: RSSegmentVerilogParameters = {
         "design_name": "RS_Segment",
         "description": "Zero latency backward and one latency forwards building block "
-            + "of RS encoder accumulator type",
+        + "of RS encoder accumulator type",
         "gf_degree": 10,
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
         "output_path": Path("rtl"),
-        "constant_multplicants": [0]  # To populate in init
+        "constant_multplicants": [0],  # To populate in init
     }
 
     params: RSAccumulatorVerilogParameters = {
@@ -147,7 +147,7 @@ if __name__ == "__main__":
         "output_path": Path("rtl"),
         "word_size": 10,
         "n_parity_sym": 10,
-        "segment_generator_params": seg_params
+        "segment_generator_params": seg_params,
     }
     RSAcc = RSAccumulatorVerilogGenerator(params)
 

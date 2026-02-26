@@ -23,11 +23,11 @@ constant_multiplicants = [random.randint(0, 1023) for _ in range(20)]
 params: MastrovitoVerilogParameters = {
     "design_name": "GF_Mastrovito_Multiplier_Adder",
     "description": "Zero Latency Galois Field 2^n multiplication "
-        + "and addition module for custom Reed Solomon Encoding",
+    + "and addition module for custom Reed Solomon Encoding",
     "gf_degree": 10,
     "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
     "output_path": Path("rtl"),
-    "constant_multplicants": list(constant_multiplicants)
+    "constant_multplicants": list(constant_multiplicants),
 }
 _generator = MastrovitoVerilogGenerator(params)
 
@@ -52,8 +52,8 @@ async def dff_simple_test(dut):
         expected = gen_field(A_g * B_g + C_g)
         dut_value = gen_field(int(dut.PS.value))
         assert expected == dut_value, (
-            f"For input A={A}, B={B_g}, C={C_g}; Expected {bitarray.bitarray(expected.tobytes())}, " +
-            "got {bitarray.bitarray(dut_value.tobytes())}"
+            f"For input A={A}, B={B_g}, C={C_g}; Expected {bitarray.bitarray(expected.tobytes())}, "
+            + "got {bitarray.bitarray(dut_value.tobytes())}"
         )
 
 

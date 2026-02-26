@@ -33,7 +33,6 @@ class MastrovitoMatrixGenerator:
     """
 
     def __init__(self, params: MastrovitoMatrixParameters) -> None:
-
         self.gf_degree = params["gf_degree"]
         self.gf2_field = galois.GF(2, 1)
         self.irreducible_poly = galois.Poly(params["irreducible_poly_coeffs"], self.gf2_field)
@@ -50,7 +49,6 @@ class MastrovitoMatrixGenerator:
         return int("".join(bool_array.astype(int).astype(str)), 2)
 
     def _calculate_reduction_matrix(self) -> np.ndarray:
-
         reduction_matrix = np.zeros((self.gf_degree), dtype=self.gf2_field)
 
         P_ext = self.gf_field.irreducible_poly
@@ -60,14 +58,11 @@ class MastrovitoMatrixGenerator:
             x_coeffs[-i - 1] = 1
             x_power_poly = galois.Poly(x_coeffs, self.gf2_field)
             reduced_power = x_power_poly % P_ext
-            reduction_matrix[i - self.gf_degree] = galois.Poly(
-                reduced_power.coeffs, self.gf2_field
-            )
+            reduction_matrix[i - self.gf_degree] = galois.Poly(reduced_power.coeffs, self.gf2_field)
 
         return reduction_matrix
 
     def _calculate_mastrovito_matrix(self, A: int, reduction_matrix: NDArray) -> NDArray:
-
         mastrovito_matrix: NDArray = galois.GF2.Zeros((self.gf_degree, self.gf_degree))
 
         for i in range(self.gf_degree):
@@ -79,16 +74,13 @@ class MastrovitoMatrixGenerator:
                     T_i += galois.Poly.Int((1 << j), self.gf2_field)
                     T_i += reduction_matrix[j - self.gf_degree]
 
-            T_i_coeff: np.ndarray = np.concatenate(
-                [np.ndarray(self.gf_degree - len(T_i.coeffs)), T_i.coeffs]
-            )
+            T_i_coeff: np.ndarray = np.concatenate([np.ndarray(self.gf_degree - len(T_i.coeffs)), T_i.coeffs])
 
             mastrovito_matrix[i] = T_i_coeff
 
         return np.rot90(mastrovito_matrix)
 
     def get_mastrovito(self, A: int) -> NDArray:
-
         reduction_matrix = self._calculate_reduction_matrix()
 
         return self._calculate_mastrovito_matrix(A, reduction_matrix)

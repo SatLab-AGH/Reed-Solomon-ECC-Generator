@@ -32,11 +32,11 @@ constant_multiplicants = [random.randint(0, 1023) for _ in range(20)] + [1, 1023
 params: RSSegmentVerilogParameters = {
     "design_name": "RS_Segment",
     "description": "Zero Latency Galois Field 2^n multiplication "
-        + "and addition module for custom Reed Solomon Encoding",
+    + "and addition module for custom Reed Solomon Encoding",
     "gf_degree": 10,
     "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
     "output_path": Path("rtl"),
-    "constant_multplicants": list(constant_multiplicants)
+    "constant_multplicants": list(constant_multiplicants),
 }
 _generator = RSSegmentVerilogGenerator(params)
 
@@ -55,7 +55,7 @@ async def segment_overseer(dut, cycles=200):
 
     def MA_GF(A_g, B_g, C_g):
         return gen_field(A_g) * gen_field(B_g) + gen_field(C_g)
-    
+
     await RisingEdge(dut.clk)
     for _ in range(cycles + 1):
         bi = dut.RS_Backward_I.value
@@ -67,8 +67,9 @@ async def segment_overseer(dut, cycles=200):
         logger.info(f"bi: {bi}, fi: {fi}, bo: {bo}, fo: {fo}")
 
         expected = MA_GF(A, gen_field(int(bi)), gen_field(int(fi)))
-        assert int(expected) == int(fo), f"Expected: {expected}, from dut got: {fo}, " \
-                        f"using A: {A}, bi: {bi}, fi: {fi}, bo: {bo}, fo: {fo}"
+        assert int(expected) == int(fo), (
+            f"Expected: {expected}, from dut got: {fo}, using A: {A}, bi: {bi}, fi: {fi}, bo: {bo}, fo: {fo}"
+        )
         assert bi == bo, f"Expected: {bi}, from dut got: {bo}"
 
 
@@ -82,7 +83,7 @@ async def RS_Segment_Deg10_random(dut):
     logger.info("Starting DFF simple test...")
     clock = Clock(dut.clk, 1000)
     logger.info("Clock initialized")
-    
+
     cocotb.start_soon(clock.start())
     logger.info("Clock started.")
     driver = cocotb.start_soon(segment_driver(dut))
