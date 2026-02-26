@@ -60,6 +60,7 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
         interfaces = [
             (
                 ModuleInterface("clk", "i"),
+                ModuleInterface("rst_n", "i"),
                 ModuleInterface("acc_input", "i", word_size),
                 ModuleInterface("acc_output", "o", word_size),
                 ModuleInterface("feedback", "i"),
@@ -107,6 +108,7 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
                 instance_name=f"{idx}",
                 GF_CONST_MULT=coef,
                 clk="clk",
+                rst_n="rst_n",
                 RS_Backward_I=bi,
                 RS_Backward_O=bo,
                 RS_Forward_I=fi,

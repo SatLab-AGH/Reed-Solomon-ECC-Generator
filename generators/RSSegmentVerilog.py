@@ -47,6 +47,7 @@ class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
         interfaces = [
             (
                 ModuleInterface("clk", "i"),
+                ModuleInterface("rst_n", "i"),
                 ModuleInterface("RS_Backward_I", "i", self.gf_degree),
                 ModuleInterface("RS_Backward_O", "o", self.gf_degree),
                 ModuleInterface("RS_Forward_O", "o", self.gf_degree),
@@ -69,7 +70,7 @@ class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
         logger.info("Generating module header")
         return (
             "always @(posedge clk) begin : Latency_1\n"
-            + "    RS_Forward_O_reg <= PS;\n"
+            + "    RS_Forward_O_reg <= rst_n ? PS : 0;\n"
             + "end // always\n"
             + "\n"
         )

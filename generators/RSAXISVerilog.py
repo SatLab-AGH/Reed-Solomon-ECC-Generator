@@ -64,6 +64,7 @@ class RSAXISVerilogGenerator(ModuleVerilogGenerator):
         return template.format(
             instance_name="",
             clk="ACLK",
+            rst_n="ARESETn",
             acc_input="TDATA_s",
             acc_output="acc_output",
             feedback="(!feedback_control_reg & TVALID_s)",

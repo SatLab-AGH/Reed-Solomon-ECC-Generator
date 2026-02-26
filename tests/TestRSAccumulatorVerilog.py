@@ -94,7 +94,7 @@ async def accumulator_driver(dut, rs_data_in: RSInputData):
     logger.info(
         f"Starting segment driver with data of length {len(rs_data_in)}and ECC length {{rs_data_in.ecc_len}}"
     )
-
+    dut.rst_n.value = 1
     for word in rs_data_in.data:
         dut.feedback.value = 1
         dut.acc_input.value = int(word)
