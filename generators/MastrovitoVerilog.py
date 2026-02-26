@@ -9,7 +9,12 @@ import numpy as np
 from numpy.typing import NDArray
 
 from generators.MastrovitoMatrix import MastrovitoMatrixGenerator, MastrovitoMatrixParameters
-from generators.ModuleVerilog import ModuleInterface, ModuleParameter, ModuleVerilogGenerator, ModuleVerilogParameters
+from generators.ModuleVerilog import (
+    ModuleInterface,
+    ModuleParameter,
+    ModuleVerilogGenerator,
+    ModuleVerilogParameters,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -38,14 +43,15 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
         self.params = params
         super().__init__(params)
         self._load_global_config()
-        self.params["design_name"] += f"_Deg{params["gf_degree"]}"
-        self.params["specific_params"] = \
-            f"\n//    irreducible_poly_coeffs: {self.params["irreducible_poly_coeffs"]}"\
-            f"\n//    constant_multplicants: {self.params["constant_multplicants"]}\n"
+        self.params["design_name"] += f"_Deg{params['gf_degree']}"
+        self.params["specific_params"] = (
+            f"\n//    irreducible_poly_coeffs: {self.params['irreducible_poly_coeffs']}"
+            f"\n//    constant_multplicants: {self.params['constant_multplicants']}\n"
+        )
 
         logger.info(
-            f"Initializing Mastrovito matrix generator with degree {params["gf_degree"]}"
-            f" and irreducible polynomial {params["irreducible_poly_coeffs"]}"
+            f"Initializing Mastrovito matrix generator with degree {params['gf_degree']}"
+            f" and irreducible polynomial {params['irreducible_poly_coeffs']}"
         )
 
     # Functions
@@ -85,7 +91,6 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
         return output_str
 
     def _generate_mult_function(self, A) -> str:
-
         mastrovito_matrix = self.get_mastrovito(A)
         verilog_function_string: str = self._generate_mult_function_header(A, self.gf_degree)
         verilog_function_string += self._generate_mult_function_body(mastrovito_matrix)
@@ -142,20 +147,13 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
                 ModuleInterface("PS", "o", degree),
             )
         ]
-        parameters = [
-            ModuleParameter("GF_CONST_MULT", default_value=1)
-        ]
+        parameters = [ModuleParameter("GF_CONST_MULT", default_value=1)]
         ports_code = self.generic_generate_module_header(interfaces, parameters)
 
-        return (
-            f"{ports_code}"
-            f"// P = GF_CONST_MULT*B\n"
-            f"// PS = P + C\n\n"
-            f"wire [{degree - 1}:0] P;\n\n"
-        )
+        return f"{ports_code}// P = GF_CONST_MULT*B\n// PS = P + C\n\nwire [{degree - 1}:0] P;\n\n"
 
     def _generate_module_foot(self) -> str:  # noqa: PLR6301
-        return ("\n" + "endmodule\n")
+        return "\n" + "endmodule\n"
 
     def _generate_module_body(self, multiplicants):
         logger.info("Generating module body")
@@ -184,7 +182,7 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
             + self._generate_module_body(multiplicants)
             + self._generate_module_foot()
         )
-   
+
     def generate_to_file(self):
         file_name = f"{self.params['design_name']}.v"
 
@@ -204,8 +202,8 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
 if __name__ == "__main__":
     params: MastrovitoVerilogParameters = {
         "design_name": "GF_Mastrovito_Multiplier_Adder",
-        "description": "Zero Latency Galois Field 2^n multiplication "   
-            + "and addition module for custom Reed Solomon Encoding",
+        "description": "Zero Latency Galois Field 2^n multiplication "
+        + "and addition module for custom Reed Solomon Encoding",
         "gf_degree": 10,
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
         "output_path": Path("rtl"),

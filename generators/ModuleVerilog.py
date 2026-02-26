@@ -33,34 +33,32 @@ class ModuleVerilogParameters(TypedDict):
     specific_params: NotRequired[str]
     create_date: NotRequired[datetime]
 
+
 @dataclass
 class ModuleParameter:
     name: str
-    par_type: str|None = None
-    default_value: int|str|None = None
+    par_type: str | None = None
+    default_value: int | str | None = None
 
     def __str__(self) -> str:
         type_part = f"{self.par_type} " if self.par_type is not None else ""
         default_part = f" = {self.default_value}" if self.default_value is not None else ""
         return f"parameter {type_part}{self.name}{default_part}"
 
+
 @dataclass
 class ModuleInterface:
     name: str
-    intr_type: Literal['i', 'o', 'io']
-    width: int|None = None
-    is_reg: bool|None = None 
+    intr_type: Literal["i", "o", "io"]
+    width: int | None = None
+    is_reg: bool | None = None
 
     def __str__(self) -> str:
-        intr_map = {
-            "i": "input",
-            "o": "output",
-            "io": "inout"
-        }
+        intr_map = {"i": "input", "o": "output", "io": "inout"}
 
         intr_type = intr_map.get(self.intr_type, self.intr_type)
         reg_or_wire = "reg" if self.is_reg else "wire"
-        width = f"[{self.width-1}:0]" if self.width is not None else ""
+        width = f"[{self.width - 1}:0]" if self.width is not None else ""
 
         return f"{intr_type} {reg_or_wire} {width} {self.name}".replace("  ", " ").strip()
 
@@ -80,7 +78,9 @@ class ModuleVerilogGenerator(abc.ABC):
         self.params |= global_config
 
     @staticmethod
-    def flatten_interfaces(interfaces: Sequence[ModuleInterface | tuple[ModuleInterface, ...]]) -> list[ModuleInterface]:
+    def flatten_interfaces(
+        interfaces: Sequence[ModuleInterface | tuple[ModuleInterface, ...]],
+    ) -> list[ModuleInterface]:
         flat_interfaces_ls = []
         for entry in interfaces:
             if isinstance(entry, tuple):
@@ -92,12 +92,12 @@ class ModuleVerilogGenerator(abc.ABC):
     def generic_generate_module_header(
         self,
         interfaces: Sequence[ModuleInterface | tuple[ModuleInterface, ...]],
-        parameters: list[ModuleParameter] | None = None
+        parameters: list[ModuleParameter] | None = None,
     ):
         self.verilog_interfaces = interfaces
         self.verilog_parameters = parameters
 
-        m_head = [f'module {self.params["design_name"]}']
+        m_head = [f"module {self.params['design_name']}"]
 
         # ---------- parameters ----------
         if parameters:
@@ -116,7 +116,6 @@ class ModuleVerilogGenerator(abc.ABC):
         flat_index = 0
 
         for g_i, entry in enumerate(interfaces):
-
             group = entry if isinstance(entry, tuple) else (entry,)
 
             for iface in group:
@@ -138,7 +137,7 @@ class ModuleVerilogGenerator(abc.ABC):
         parameters = self.verilog_parameters
         interfaces = self.verilog_interfaces
 
-        m_head = [f'{self.params["design_name"]}']
+        m_head = [f"{self.params['design_name']}"]
 
         # ---------- parameters ----------
         if parameters:
@@ -147,8 +146,8 @@ class ModuleVerilogGenerator(abc.ABC):
                 comma = "," if i < len(parameters) - 1 else ""
                 m_head.append(f"\t.{parameter.name}({{{parameter.name}}}){comma}")
             m_head.append(")")
-        
-        m_head.append(f"{self.params["design_name"]}_{{instance_name}}_impl")
+
+        m_head.append(f"{self.params['design_name']}_{{instance_name}}_impl")
         m_head.append("(")
 
         # ---------- interfaces ----------
@@ -158,7 +157,6 @@ class ModuleVerilogGenerator(abc.ABC):
         flat_index = 0
 
         for g_i, entry in enumerate(interfaces):
-
             group = entry if isinstance(entry, tuple) else (entry,)
 
             for iface in group:
@@ -200,7 +198,7 @@ class ModuleVerilogGenerator(abc.ABC):
             specific_params=config.get("specific_params"),
             additional_comments=config.get("additional_comments"),
         )
-    
+
     def _generate(self):
         pass
 

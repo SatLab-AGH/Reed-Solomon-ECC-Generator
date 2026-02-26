@@ -68,7 +68,7 @@ class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
     def _generate_module_synchronous():
         logger.info("Generating module header")
         return (
-              "always @(posedge clk) begin : Latency_1\n"
+            "always @(posedge clk) begin : Latency_1\n"
             + "    RS_Forward_O_reg <= PS;\n"
             + "end // always\n"
             + "\n"
@@ -98,11 +98,11 @@ if __name__ == "__main__":
     params: RSSegmentVerilogParameters = {
         "design_name": "RS_Segment",
         "description": "Zero latency backward and one latency forwards building block "
-            + "of RS encoder accumulator type",
+        + "of RS encoder accumulator type",
         "gf_degree": 10,
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
         "output_path": Path("rtl"),
-        "constant_multplicants": [0, 1, 2, 1023, 195, 175, 677, 918, 464, 463, 997, 498, 169]
+        "constant_multplicants": [0, 1, 2, 1023, 195, 175, 677, 918, 464, 463, 997, 498, 169],
     }
     mastroVer = RSSegmentVerilogGenerator(params)
 

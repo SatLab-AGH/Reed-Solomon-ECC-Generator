@@ -31,7 +31,7 @@ handle.setFormatter(formatter)
 logger.addHandler(handle)
 
 
-def hexlist(lst, width=2, prefix='', sep=' '):
+def hexlist(lst, width=2, prefix="", sep=" "):
     return sep.join(f"{prefix}{x:0{width}x}" for x in lst)
 
 
@@ -41,7 +41,7 @@ seg_params: RSSegmentVerilogParameters = {
     "gf_degree": 10,
     "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
     "output_path": Path("rtl"),
-    "constant_multplicants": []
+    "constant_multplicants": [],
 }
 
 acc_params: RSAccumulatorVerilogParameters = {
@@ -50,7 +50,7 @@ acc_params: RSAccumulatorVerilogParameters = {
     "output_path": Path("rtl"),
     "word_size": 10,
     "n_parity_sym": 50,
-    "segment_generator_params": seg_params
+    "segment_generator_params": seg_params,
 }
 
 _generator = RSAccumulatorVerilogGenerator(acc_params)
@@ -72,26 +72,28 @@ class RSOutputData:
 
     def __len__(self):
         return len(self.data) + len(self.ecc)
-    
+
 
 def validate_RS_ECC(rs_data_in: RSInputData, rs_data_out: RSOutputData):
     gf_poly_coeffs = _generator.segment_generator.irreducible_poly._integer
-    ecc_len = rs_data_in.ecc_len          # number of parity symbols
-    c_exp = 10                            # 10-bit symbols → GF(2^10)
+    ecc_len = rs_data_in.ecc_len  # number of parity symbols
+    c_exp = 10  # 10-bit symbols → GF(2^10)
 
     rsc = rs.RSCodec(ecc_len, c_exp=c_exp, prim=gf_poly_coeffs)
     logger.debug(f"Using rsc {rsc.gen}")
     encoded = rsc.encode(rs_data_in.data)
-    computed_ecc = list(encoded[len(rs_data_in.data):])
+    computed_ecc = list(encoded[len(rs_data_in.data) :])
     dut_ecc = rs_data_out.ecc
     logger.debug(f"Exp msg: {encoded} \n DUT msg: {np.concat((rs_data_out.data, dut_ecc))} \n")
-    assert np.array_equal(computed_ecc, rs_data_out.ecc), \
+    assert np.array_equal(computed_ecc, rs_data_out.ecc), (
         f"ECC mismatch: computed {computed_ecc}, dut returned {dut_ecc}; using poly: {rsc.gen}"
+    )
 
 
 async def accumulator_driver(dut, rs_data_in: RSInputData):
-    logger.info(f"Starting segment driver with data of length {len(rs_data_in)}"
-                "and ECC length {rs_data_in.ecc_len}")
+    logger.info(
+        f"Starting segment driver with data of length {len(rs_data_in)}and ECC length {{rs_data_in.ecc_len}}"
+    )
 
     for word in rs_data_in.data:
         dut.feedback.value = 1
@@ -116,7 +118,7 @@ async def accumulator_overseer(dut, rs_data_in: RSInputData) -> RSOutputData:
         await RisingEdge(dut.clk)
         ecc[i] = int(dut.acc_output.value)
 
-    await Timer(5, 'ns')
+    await Timer(5, "ns")
 
     return RSOutputData(data, ecc)
 
@@ -134,12 +136,12 @@ async def RS_Accumulator_random(dut):
     rs_data_in = RSInputData(np.array([random.randint(0, 1023) for _ in range(ecc_len)], dtype=int), ecc_len)
 
     clock = Clock(dut.clk, 1000)
-    
+
     cocotb.start_soon(clock.start(start_high=False))
-    
+
     driver = cocotb.start_soon(accumulator_driver(dut, rs_data_in))
     overseer = cocotb.start_soon(accumulator_overseer(dut, rs_data_in))
-    
+
     await driver
     rs_data_out = await overseer
 
@@ -155,7 +157,9 @@ def test_runner():
 
     proj_path = Path(__file__).resolve().parent.parent
 
-    sources = [proj_path / "rtl/RS_Accumulator.v", ]
+    sources = [
+        proj_path / "rtl/RS_Accumulator.v",
+    ]
     sources = [proj_path / "rtl/RS_Accumulator.v", proj_path / "rtl/RS_Segment_Deg10.v"]
 
     runner = get_runner(sim)

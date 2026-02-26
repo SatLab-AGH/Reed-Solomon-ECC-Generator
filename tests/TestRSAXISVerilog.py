@@ -33,7 +33,7 @@ handle.setFormatter(formatter)
 logger.addHandler(handle)
 
 
-def hexlist(lst, width=2, prefix='', sep=' '):
+def hexlist(lst, width=2, prefix="", sep=" "):
     return sep.join(f"{prefix}{x:0{width}x}" for x in lst)
 
 
@@ -43,7 +43,7 @@ seg_params: RSSegmentVerilogParameters = {
     "gf_degree": 10,
     "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
     "output_path": Path("rtl"),
-    "constant_multplicants": []
+    "constant_multplicants": [],
 }
 
 acc_params: RSAccumulatorVerilogParameters = {
@@ -52,14 +52,14 @@ acc_params: RSAccumulatorVerilogParameters = {
     "output_path": Path("rtl"),
     "word_size": 10,
     "n_parity_sym": 10,
-    "segment_generator_params": seg_params
+    "segment_generator_params": seg_params,
 }
 
 axis_params: RSAXISVerilogParameters = {
     "design_name": "RS_AXIS",
     "description": "",
     "output_path": Path("rtl"),
-    "acc_params": acc_params
+    "acc_params": acc_params,
 }
 
 _generator = RSAXISVerilogGenerator(axis_params)
@@ -82,10 +82,11 @@ class RSOutputData:
     def __len__(self):
         return len(self.data) + len(self.ecc)
 
-class RS_AXIS_Driver():
+
+class RS_AXIS_Driver:
     def __init__(self, dut) -> None:
         self.dut = dut
-        self.data_width = _generator.acc_verilog.params['word_size']
+        self.data_width = _generator.acc_verilog.params["word_size"]
         self.dut.TVALID_s.value = 0
         self.dut.TDATA_s.value = 0
         self.dut.TLAST_s.value = 0
@@ -94,7 +95,7 @@ class RS_AXIS_Driver():
     async def simulate_receiving(self):
         self.dut.TREADY_m.value = 1
 
-    async def send_one_word(self, word: int, max_wait_cycles = 1024):
+    async def send_one_word(self, word: int, max_wait_cycles=1024):
         for _ in range(max_wait_cycles):
             await RisingEdge(self.dut.ACLK)
             if self.dut.TREADY_s.value == 1:
@@ -108,14 +109,13 @@ class RS_AXIS_Driver():
 
         raise TimeoutError(f"RS_AXIS_Driver: send_data timed out cycles:{max_wait_cycles}")
 
-
-    async def send_word_stream(self, word_stream: np.ndarray, max_wait_cycles = 1024):
+    async def send_word_stream(self, word_stream: np.ndarray, max_wait_cycles=1024):
         for _ in range(max_wait_cycles):
             await RisingEdge(self.dut.ACLK)
             if self.dut.TREADY_s.value == 1:
                 self.dut.TVALID_s.value = 1
                 for idx, word in enumerate(word_stream):
-                    if idx == len(word_stream)-1:
+                    if idx == len(word_stream) - 1:
                         self.dut.TLAST_s.value = 1
                     self.dut.TDATA_s.value = int(word)
                     await RisingEdge(self.dut.ACLK)
@@ -128,12 +128,12 @@ class RS_AXIS_Driver():
         raise TimeoutError(f"RS_AXIS_Driver: send_data timed out cycles:{max_wait_cycles}")
 
 
-class RS_AXIS_Overseer():
+class RS_AXIS_Overseer:
     def __init__(self, dut) -> None:
         self.dut = dut
-        self.data_width = _generator.acc_verilog.params['word_size']
+        self.data_width = _generator.acc_verilog.params["word_size"]
 
-    async def record_word_stream(self, num_data: int, num_ecc: int, max_wait_cycles = 1024):
+    async def record_word_stream(self, num_data: int, num_ecc: int, max_wait_cycles=1024):
         data_stream = np.ndarray((num_data), dtype=int)
         ecc_stream = np.ndarray((num_ecc), dtype=int)
 
@@ -155,18 +155,19 @@ class RS_AXIS_Overseer():
 
 def validate_RS_ECC(rs_data_in: RSInputData, rs_data_out: RSOutputData):
     gf_poly_coeffs = _generator.acc_verilog.segment_generator.irreducible_poly._integer
-    ecc_len = rs_data_in.ecc_len          # number of parity symbols
-    c_exp = 10                            # 10-bit symbols → GF(2^10)
+    ecc_len = rs_data_in.ecc_len  # number of parity symbols
+    c_exp = 10  # 10-bit symbols → GF(2^10)
 
     rsc = rs.RSCodec(ecc_len, c_exp=c_exp, prim=gf_poly_coeffs)
     logger.debug(f"Using rsc {rsc.gen}")
     encoded = rsc.encode(rs_data_in.data)
-    computed_ecc = list(encoded[len(rs_data_in.data):])
+    computed_ecc = list(encoded[len(rs_data_in.data) :])
     dut_ecc = rs_data_out.ecc
     logger.debug(f"Exp msg: {encoded} \n DUT msg: {np.concat((rs_data_out.data, dut_ecc))} \n")
     assert len(computed_ecc) == len(rs_data_out.ecc)
-    assert np.array_equal(computed_ecc, rs_data_out.ecc), \
+    assert np.array_equal(computed_ecc, rs_data_out.ecc), (
         f"ECC mismatch: computed {computed_ecc}, dut returned {dut_ecc}; using poly: {rsc.gen}"
+    )
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -182,7 +183,9 @@ async def RS_AXIS_random_two_streams(dut):
     rs_axis_overseer = RS_AXIS_Overseer(dut)
 
     ecc_len = _generator.acc_verilog.params["n_parity_sym"]
-    rs_data_in = RSInputData(np.array([random.randint(0, 1023) for _ in range(random.randint(0, 100))], dtype=int), ecc_len)
+    rs_data_in = RSInputData(
+        np.array([random.randint(0, 1023) for _ in range(random.randint(0, 100))], dtype=int), ecc_len
+    )
 
     clock = Clock(dut.ACLK, 1000)
     await rs_axis_driver.simulate_receiving()
@@ -190,23 +193,25 @@ async def RS_AXIS_random_two_streams(dut):
 
     driver_task = cocotb.start_soon(rs_axis_driver.send_word_stream(rs_data_in.data))
     overseer_task = cocotb.start_soon(rs_axis_overseer.record_word_stream(len(rs_data_in), ecc_len))
-    
+
     await driver_task
     rs_data_out = await overseer_task
 
     validate_RS_ECC(rs_data_in, rs_data_out)
 
-    rs_data_in = RSInputData(np.array([random.randint(0, 1023) for _ in range(random.randint(0, 100))], dtype=int), ecc_len)
+    rs_data_in = RSInputData(
+        np.array([random.randint(0, 1023) for _ in range(random.randint(0, 100))], dtype=int), ecc_len
+    )
 
     driver_task_2 = cocotb.start_soon(rs_axis_driver.send_word_stream(rs_data_in.data))
     overseer_task_2 = cocotb.start_soon(rs_axis_overseer.record_word_stream(len(rs_data_in), ecc_len))
-    
+
     await driver_task_2
     rs_data_out = await overseer_task_2
 
     validate_RS_ECC(rs_data_in, rs_data_out)
 
-    await Timer(20, unit='ns')
+    await Timer(20, unit="ns")
 
 
 # @pytest.mark.parametrize(
@@ -218,7 +223,11 @@ def test_runner():
 
     proj_path = Path(__file__).resolve().parent.parent
 
-    sources = [proj_path / "rtl/RS_AXIS.v", proj_path / "rtl/RS_Accumulator.v", proj_path / "rtl/RS_Segment_Deg10.v"]
+    sources = [
+        proj_path / "rtl/RS_AXIS.v",
+        proj_path / "rtl/RS_Accumulator.v",
+        proj_path / "rtl/RS_Segment_Deg10.v",
+    ]
 
     runner = get_runner(sim)
     runner.build(
