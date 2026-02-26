@@ -42,6 +42,7 @@ _generator = RSSegmentVerilogGenerator(params)
 
 
 async def segment_driver(dut, bi: list[int] | None = None, fi: list[int] | None = None, cycles=100):
+    dut.rst_n.value = 1
     for i in range(cycles):
         await RisingEdge(dut.clk)
         dut.RS_Backward_I.value = random.randint(0, 1023) if bi is None else bi[i]

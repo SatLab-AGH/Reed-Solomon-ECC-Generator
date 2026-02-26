@@ -91,6 +91,7 @@ class RS_AXIS_Driver:
         self.dut.TDATA_s.value = 0
         self.dut.TLAST_s.value = 0
         self.dut.TREADY_m.value = 0
+        self.dut.ARESETn.value = 1
 
     async def simulate_receiving(self):
         self.dut.TREADY_m.value = 1
