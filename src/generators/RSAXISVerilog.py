@@ -33,20 +33,20 @@ class RSAXISVerilogGenerator(ModuleVerilogGenerator):
         word_size = self.params["acc_params"]["word_size"]
         interfaces = [
             (
-                ModuleInterface("ACLK", "i"),
-                ModuleInterface("ARESETn", "i"),
+                ModuleInterface("aclk", "i"),
+                ModuleInterface("areset_n", "i"),
             ),
             (
-                ModuleInterface("TVALID_m", "o"),
-                ModuleInterface("TREADY_m", "i"),
-                ModuleInterface("TDATA_m", "o", word_size),
-                ModuleInterface("TLAST_m", "o"),
+                ModuleInterface("axis_m_tvalid", "o"),
+                ModuleInterface("axis_m_tready", "i"),
+                ModuleInterface("axis_m_tdata", "o", word_size),
+                ModuleInterface("axis_m_tlast", "o"),
             ),
             (
-                ModuleInterface("TVALID_s", "i"),
-                ModuleInterface("TREADY_s", "o"),
-                ModuleInterface("TDATA_s", "i", word_size),
-                ModuleInterface("TLAST_s", "i"),
+                ModuleInterface("axis_s_tvalid", "i"),
+                ModuleInterface("axis_s_tready", "o"),
+                ModuleInterface("axis_s_tdata", "i", word_size),
+                ModuleInterface("axis_s_tlast", "i"),
             ),
         ]
         return self.generic_generate_module_header(interfaces)
@@ -58,11 +58,11 @@ class RSAXISVerilogGenerator(ModuleVerilogGenerator):
         template = self.acc_verilog.generic_generate_module_instance_template()
         return template.format(
             instance_name="",
-            clk="ACLK",
-            rst_n="ARESETn",
-            acc_input="TDATA_s",
+            clk="aclk",
+            rst_n="areset_n",
+            acc_input="axis_s_tdata",
             acc_output="acc_output",
-            feedback="(!feedback_control_reg & TVALID_s)",
+            feedback="(!feedback_control_reg & axis_s_tvalid)",
         )
 
     def _get_feedback_control_template(self):
