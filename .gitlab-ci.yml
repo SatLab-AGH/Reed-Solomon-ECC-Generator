@@ -24,18 +24,17 @@ default:
     - apt-get install -y iverilog verilator curl python3-dev
     - curl -LsSf https://astral.sh/uv/install.sh | sh
     - source $HOME/.local/bin/env
-    - uv sync
+    - uv sync --active
 
 # The test job needs iverilog and Python deps; security jobs don't
 test:
   stage: test
   script:
-    - mkdir ./logs
-    - chmod +x ./scripts/score_regr.sh   # ensure it's executable
-    - ./scripts/score_regr.sh
+    - chmod +x ./scripts/mcore_regr.sh
+    - ./scripts/mcore_regr.sh
   artifacts:
     paths:
-      - ./logs/               # if you want to keep simulation logs
+      - ./build/logs/               # if you want to keep simulation logs
     when: always
 
 # lint:

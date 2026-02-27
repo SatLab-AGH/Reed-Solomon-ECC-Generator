@@ -7,18 +7,9 @@ import numpy as np
 
 from generators.MastrovitoVerilog import MastrovitoVerilogGenerator, MastrovitoVerilogParameters
 from generators.ModuleVerilog import ModuleInterface, ModuleParameter
+from generators.logging_config import setup_logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-proj_path = Path(__file__).resolve().parent.parent
-handle = RotatingFileHandler(
-    proj_path.joinpath("logs/rs_verilog_segment.log"), maxBytes=5 * 1024 * 1024, backupCount=3
-)
-formatter = logging.Formatter(
-    "%(asctime)s | %(levelname)-8s | %(filename)s:%(lineno)d | %(funcName)s | %(message)s"
-)
-handle.setFormatter(formatter)
-logger.addHandler(handle)
 
 
 class RSSegmentVerilogParameters(MastrovitoVerilogParameters):
@@ -28,6 +19,10 @@ class RSSegmentVerilogParameters(MastrovitoVerilogParameters):
 class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
     def __init__(self, params: RSSegmentVerilogParameters):
         super().__init__(params)
+        self.description = (
+            f"One cycle latency galois field multiplier-adder (A*B+C) implemented as XOR Mastrovito matrix with predefined A.\n"
+            "//\t\t\tImplemented Backward bypass for Reed-Solomon encoder implementation."
+        )
 
     # Verilog function calls generation
     @staticmethod
@@ -84,7 +79,8 @@ class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
             + "endmodule\n"
         )
 
-    def _generate_module(self, multiplicants):
+    def _generate_module(self):
+        multiplicants = self.params["constant_multplicants"]
         return (
             self._generate_module_header()
             + self._generate_net()
@@ -96,15 +92,15 @@ class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
 
 
 if __name__ == "__main__":
+    setup_logging(f"RS_Segment/default.log")
     params: RSSegmentVerilogParameters = {
         "design_name": "RS_Segment",
         "description": "Zero latency backward and one latency forwards building block "
         + "of RS encoder accumulator type",
         "gf_degree": 10,
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
-        "output_path": Path("rtl"),
         "constant_multplicants": [0, 1, 2, 1023, 195, 175, 677, 918, 464, 463, 997, 498, 169],
     }
     mastroVer = RSSegmentVerilogGenerator(params)
 
-    mastroVer.generate_to_file()
+    mastroVer.generate_to_file("RS_Segment.v")

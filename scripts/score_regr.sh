@@ -1,2 +1,2 @@
 source ./.venv/bin/activate
-pytest
+pytest ./ --randomly-seed=1234

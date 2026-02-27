@@ -6,9 +6,16 @@
             "request": "launch",
             "module": "pytest",
             "args": [
-                "./",
-                "-vv"
+                // "./",
+                "-vv",
+                "tests/TestRSAXISVerilog.py"
             ],
+            "env": {
+                "SIM": "icarus",
+                "TOPLEVEL": "RS_AXIS",
+                "TOPLEVEL_LANG": "verilog",
+                "COCOTB_LOG_LEVEL": "DEBUG"   // optional: more logs
+            },
             "justMyCode": false
         }
     ],

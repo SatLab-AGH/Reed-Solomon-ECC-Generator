@@ -1,2 +1,2 @@
 source ./.venv/bin/activate
-pytest -n auto --dist loadfile
+pytest -n 4 --randomly-seed=1234

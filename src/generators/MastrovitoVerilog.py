@@ -15,18 +15,10 @@ from generators.ModuleVerilog import (
     ModuleVerilogGenerator,
     ModuleVerilogParameters,
 )
+from generators.logging_config import setup_logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-proj_path = pathlib.Path(__file__).resolve().parent.parent
-handle = RotatingFileHandler(
-    proj_path.joinpath("logs/mastrovitoverilog.log"), maxBytes=5 * 1024 * 1024, backupCount=3
-)
-formatter = logging.Formatter(
-    "%(asctime)s | %(levelname)-8s | %(filename)s:%(lineno)d | %(funcName)s | %(message)s"
-)
-handle.setFormatter(formatter)
-logger.addHandler(handle)
+proj_path = Path(__file__).resolve().parent.parent
 
 
 class MastrovitoVerilogParameters(ModuleVerilogParameters, MastrovitoMatrixParameters):
@@ -41,12 +33,15 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
     def __init__(self, params: MastrovitoVerilogParameters):
         logger.info("Loading config")
         self.params = params
-        super().__init__(params)
-        self._load_global_config()
+        MastrovitoMatrixGenerator.__init__(self, params)
+        ModuleVerilogGenerator.__init__(self, params)
+        self._load_global_file_config()
         self.params["design_name"] += f"_Deg{params['gf_degree']}"
+        self.description = f"Zero latency, combinatorial galois field multiplier-adder (A*B+C) implemented as XOR Mastrovito matrix with predefined A."
         self.params["specific_params"] = (
-            f"\n//    irreducible_poly_coeffs: {self.params['irreducible_poly_coeffs']}"
-            f"\n//    constant_multplicants: {self.params['constant_multplicants']}\n"
+            f"\n//    gf_degree: {self.params['gf_degree']}"
+            f"\n//    gf irreducible_poly_coeffs: {self.params['irreducible_poly_coeffs']}"
+            f"\n//    available multplicants: {self.params['constant_multplicants']}"
         )
 
         logger.info(
@@ -113,6 +108,7 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
     def _generate_all_functions(self, multiplicants):
         outstring = "//Generated Functions\n\n"
         multiplicants = list(set(multiplicants))
+        multiplicants.sort()
 
         outstring += self._generate_add_function(self.gf_degree)
 
@@ -175,7 +171,9 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
 
         return outstring
 
-    def _generate_module(self, multiplicants):
+    def _generate_module(self):
+        multiplicants = deepcopy(self.params["constant_multplicants"])
+        multiplicants.sort()
         return (
             self._generate_module_header()
             + self._generate_all_functions(multiplicants)
@@ -183,32 +181,17 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
             + self._generate_module_foot()
         )
 
-    def generate_to_file(self):
-        file_name = f"{self.params['design_name']}.v"
-
-        path = proj_path.joinpath(self.params["output_path"])
-        multiplicants = deepcopy(self.params["constant_multplicants"])
-        multiplicants.sort()
-
-        Path(path).mkdir(exist_ok=True, parents=True)
-
-        with Path.open(Path.joinpath(path, file_name), "w") as file:
-            logger.info(f"Generating Verilog File: {path}")
-            file.write(self._generate_file_header())
-
-            file.write(self._generate_module(multiplicants))
-
 
 if __name__ == "__main__":
+    setup_logging(f"MastrovitoVerilog/default.log")
     params: MastrovitoVerilogParameters = {
         "design_name": "GF_Mastrovito_Multiplier_Adder",
         "description": "Zero Latency Galois Field 2^n multiplication "
         + "and addition module for custom Reed Solomon Encoding",
         "gf_degree": 10,
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
-        "output_path": Path("rtl"),
         "constant_multplicants": [0, 1, 2, 6, 511, 513, 1023],
     }
     mastroVer = MastrovitoVerilogGenerator(params)
 
-    mastroVer.generate_to_file()
+    mastroVer.generate_to_file("MastrovitoVerilog.v")

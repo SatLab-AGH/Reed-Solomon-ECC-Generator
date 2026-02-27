@@ -15,6 +15,7 @@ from cocotb.triggers import Timer
 from cocotb_tools.runner import get_runner
 
 from generators.MastrovitoVerilog import MastrovitoVerilogGenerator, MastrovitoVerilogParameters
+from generators.logging_config import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -26,15 +27,10 @@ params: MastrovitoVerilogParameters = {
     + "and addition module for custom Reed Solomon Encoding",
     "gf_degree": 10,
     "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
-    "output_path": Path("rtl"),
+    "output_path": Path("../build/rtl"),
     "constant_multplicants": list(constant_multiplicants),
 }
 _generator = MastrovitoVerilogGenerator(params)
-
-
-@pytest.fixture(scope="session", autouse=True)
-def setup():
-    _generator.generate_to_file()
 
 
 @cocotb.test()
@@ -62,18 +58,24 @@ async def dff_simple_test(dut):
     constant_multiplicants,
 )
 def test_runner(A):
+    setup_logging(f"GF_Mastrovito_Multiplier_Adder_Deg10/{A}.log")
+    rtl_MMA_path = f"GF_Mastrovito_Multiplier_Adder_Deg10/{A}/GF_Mastrovito_Multiplier_Adder_Deg10.v"
+    _generator.generate_to_file(rtl_MMA_path)
+
     sim = os.getenv("SIM", "icarus")
 
     proj_path = Path(__file__).resolve().parent.parent
 
-    sources = [proj_path / "rtl/GF_Mastrovito_Multiplier_Adder_Deg10.v"]
+    sources = [proj_path / "build/rtl" / rtl_MMA_path]
+    hdl_toplevel = "GF_Mastrovito_Multiplier_Adder_Deg10"
 
     runner = get_runner(sim)
     runner.build(
         sources=sources,
-        hdl_toplevel="GF_Mastrovito_Multiplier_Adder_Deg10",
+        hdl_toplevel=hdl_toplevel,
         parameters={"GF_CONST_MULT": A},
         always=True,
+        build_dir=proj_path / "build/cocotb" / hdl_toplevel / str(A),
     )
 
     runner.test(

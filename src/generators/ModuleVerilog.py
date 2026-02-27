@@ -3,31 +3,18 @@ from dataclasses import dataclass
 import json
 import logging
 from datetime import datetime
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Literal, NotRequired, Required, Sequence, TypedDict
-import inspect
+
+from generators.FileVerilog import FileVerilogGenerator, FileVerilogParameters
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 proj_path = Path(__file__).resolve().parent.parent
-handle = RotatingFileHandler(
-    proj_path.joinpath("logs/mastrovitoverilog.log"), maxBytes=5 * 1024 * 1024, backupCount=3
-)
-formatter = logging.Formatter(
-    "%(asctime)s | %(levelname)-8s | %(filename)s:%(lineno)d | %(funcName)s | %(message)s"
-)
-handle.setFormatter(formatter)
-logger.addHandler(handle)
 
 
-class ModuleVerilogParameters(TypedDict):
-    company: NotRequired[str]
-    engineer: NotRequired[str]
-    project_name: NotRequired[str]
+class ModuleVerilogParameters(FileVerilogParameters):
     design_name: Required[str]
     description: NotRequired[str]
-    output_path: Required[Path]
     dependencies: NotRequired[str]
     additional_comments: NotRequired[str]
     specific_params: NotRequired[str]
@@ -63,19 +50,11 @@ class ModuleInterface:
         return f"{intr_type} {reg_or_wire} {width} {self.name}".replace("  ", " ").strip()
 
 
-class ModuleVerilogGenerator(abc.ABC):
+class ModuleVerilogGenerator(FileVerilogGenerator):
     def __init__(self, params: ModuleVerilogParameters) -> None:
+        super().__init__(params)
         self.params = params
-        self._load_global_config()
-
-    def _load_global_config(self, path=None):
-        path = Path(__file__).parent.resolve() if path is None else path
-        file_string = ""
-        with Path.open(Path.joinpath(path, "config.json")) as file:
-            file_string = file.read()
-        global_config = json.loads(file_string)
-        global_config["create_date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.params |= global_config
+        self._load_global_file_config()
 
     @staticmethod
     def flatten_interfaces(
@@ -176,41 +155,5 @@ class ModuleVerilogGenerator(abc.ABC):
     def _generate_module(self, *args, **kwargs) -> str:
         pass
 
-    # File
-    @staticmethod
-    def _get_file_header_template() -> str:
-        with open("generators/templates/file_header.txt", "r", encoding="utf-8") as f:
-            template = f.read()
-        return template
-
-    def _generate_file_header(self) -> str:
-        template = self._get_file_header_template()
-        config = self.params
-
-        return template.format(
-            company=config.get("company"),
-            engineer=config.get("engineer"),
-            create_date=config.get("create_date"),
-            design_name=config.get("design_name"),
-            project_name=config.get("project_name"),
-            description=config.get("description"),
-            dependencies=config.get("dependencies"),
-            specific_params=config.get("specific_params"),
-            additional_comments=config.get("additional_comments"),
-        )
-
     def _generate(self):
         pass
-
-    def generate_to_file(self):
-        file_name = f"{self.params['design_name']}.v"
-
-        path = proj_path.joinpath(self.params["output_path"])
-
-        Path(path).mkdir(exist_ok=True, parents=True)
-
-        with Path.open(Path.joinpath(path, file_name), "w") as file:
-            logger.info(f"Generating Verilog File: {path}")
-            file.write(self._generate_file_header())
-
-            file.write(self._generate_module())
