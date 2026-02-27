@@ -1,17 +1,19 @@
 import logging
+from pathlib import Path
 import random
 
 import galois
 import pytest
 
 from generators.MastrovitoMatrix import MastrovitoMatrixGenerator, MastrovitoMatrixParameters
+from generators.logging_config import setup_logging
 
 logger = logging.getLogger(__name__)
 
 TESTING_ITER = 1000
 
 
-def generate_params(count):
+def generate_random_params(count):
     params = []
     for _ in range(count):
         degree = 10
@@ -24,10 +26,11 @@ def generate_params(count):
     return params
 
 
-pytestmark = pytest.mark.parametrize("gf_degree, A_constant, g_poly", generate_params(20))
+pytestmark = pytest.mark.parametrize("gf_degree, A_constant, g_poly", generate_random_params(20))
 
 
 def test_MastrovitoMatrixGenerator(gf_degree, A_constant, g_poly: galois.Poly):
+    setup_logging(Path(f"MastrovitoMatrixGenerator/{gf_degree}_{A_constant}_{g_poly._integer}.log"))
     params = MastrovitoMatrixParameters(gf_degree=gf_degree, irreducible_poly_coeffs=g_poly.coefficients())
     mastro = MastrovitoMatrixGenerator(params)
     gal_field = mastro.gf_field

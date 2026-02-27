@@ -4,7 +4,6 @@ import logging
 import os
 import random
 from dataclasses import dataclass
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 import cocotb
@@ -17,39 +16,25 @@ from cocotb_tools.runner import get_runner
 
 from generators.RSAccumulatorVerilog import RSAccumulatorVerilogGenerator, RSAccumulatorVerilogParameters
 from generators.RSSegmentVerilog import RSSegmentVerilogParameters
+from generators.logging_config import setup_logging
 
 logger = logging.getLogger("cocotb.segment")
-logger.setLevel(logging.INFO)
+
 proj_path = Path(__file__).resolve().parent.parent
-handle = RotatingFileHandler(
-    proj_path.joinpath("logs/accumulatorverilog.log"), maxBytes=5 * 1024 * 1024, backupCount=3
-)
-formatter = logging.Formatter(
-    "%(asctime)s | %(levelname)-8s | %(filename)s:%(lineno)d | %(funcName)s | %(message)s"
-)
-handle.setFormatter(formatter)
-logger.addHandler(handle)
-
-
-def hexlist(lst, width=2, prefix="", sep=" "):
-    return sep.join(f"{prefix}{x:0{width}x}" for x in lst)
-
 
 seg_params: RSSegmentVerilogParameters = {
     "design_name": "RS_Segment",
     "description": "",
     "gf_degree": 10,
     "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
-    "output_path": Path("rtl"),
     "constant_multplicants": [],
 }
 
 acc_params: RSAccumulatorVerilogParameters = {
     "design_name": "RS_Accumulator",
     "description": "",
-    "output_path": Path("rtl"),
     "word_size": 10,
-    "n_parity_sym": 50,
+    "n_parity_sym": 1,
     "segment_generator_params": seg_params,
 }
 
@@ -76,10 +61,13 @@ class RSOutputData:
 
 def validate_RS_ECC(rs_data_in: RSInputData, rs_data_out: RSOutputData):
     gf_poly_coeffs = _generator.segment_generator.irreducible_poly._integer
-    ecc_len = rs_data_in.ecc_len  # number of parity symbols
+    ecc_len = int(cocotb.plusargs.get("ECC_LEN", "inf"))
     c_exp = 10  # 10-bit symbols → GF(2^10)
 
-    rsc = rs.RSCodec(ecc_len, c_exp=c_exp, prim=gf_poly_coeffs)
+    try:
+        rsc = rs.RSCodec(ecc_len, c_exp=c_exp, prim=gf_poly_coeffs, nsize=1023)
+    except ValueError as e:
+        raise ValueError(f"{e}: {ecc_len}<{len(rs_data_in) + rs_data_in.ecc_len}")
     logger.debug(f"Using rsc {rsc.gen}")
     encoded = rsc.encode(rs_data_in.data)
     computed_ecc = list(encoded[len(rs_data_in.data) :])
@@ -123,17 +111,14 @@ async def accumulator_overseer(dut, rs_data_in: RSInputData) -> RSOutputData:
     return RSOutputData(data, ecc)
 
 
-@pytest.fixture(scope="session", autouse=True)
-def setup():
-    _generator.generate()
-
-
 @cocotb.test()
 async def RS_Accumulator_random(dut):
     logger.info("Starting DFF simple test...")
 
-    ecc_len = _generator.params["n_parity_sym"]
-    rs_data_in = RSInputData(np.array([random.randint(0, 1023) for _ in range(ecc_len)], dtype=int), ecc_len)
+    ecc_len = int(cocotb.plusargs.get("ECC_LEN", "inf"))
+    rs_data_in = RSInputData(
+        np.array([random.randint(0, 1023) for _ in range(1022 - ecc_len)], dtype=int), ecc_len
+    )
 
     clock = Clock(dut.clk, 1000)
 
@@ -148,28 +133,34 @@ async def RS_Accumulator_random(dut):
     validate_RS_ECC(rs_data_in, rs_data_out)
 
 
-# @pytest.mark.parametrize(
-#     "ecc_len",
-#     [i for i in range(20)],
-# )
-def test_runner():
+@pytest.mark.parametrize(
+    "ecc_len",
+    [(2**i) - 1 for i in range(1, 10)],
+)
+def test_runner(ecc_len):
+    setup_logging(f"RS_Accumulator/{ecc_len}.log")
+    rtl_acc_path = f"RS_Accumulator/{ecc_len}/RS_Accumulator.v"
+    rtl_seg_path = f"RS_Accumulator/{ecc_len}/RS_Segment_Deg10.v"
+
+    _generator.set_generator_poly_len(ecc_len)
+    _generator.generate_all_files(rtl_seg_path, rtl_acc_path)
     sim = os.getenv("SIM", "icarus")
 
     proj_path = Path(__file__).resolve().parent.parent
 
-    sources = [
-        proj_path / "rtl/RS_Accumulator.v",
-    ]
-    sources = [proj_path / "rtl/RS_Accumulator.v", proj_path / "rtl/RS_Segment_Deg10.v"]
+    sources = [proj_path / "build/rtl/" / rtl_acc_path, proj_path / "build/rtl" / rtl_seg_path]
+    hdl_toplevel = "RS_Accumulator"
 
     runner = get_runner(sim)
     runner.build(
         sources=sources,
-        hdl_toplevel="RS_Accumulator",
+        hdl_toplevel=hdl_toplevel,
         always=True,
+        build_dir=proj_path / "build/cocotb" / hdl_toplevel / str(ecc_len),
     )
 
     runner.test(
         hdl_toplevel="RS_Accumulator",
         test_module="tests.TestRSAccumulatorVerilog",
+        plusargs=[f"+ECC_LEN={ecc_len}", f"+GF_DEGREE ={str(acc_params['word_size'])}"],
     )

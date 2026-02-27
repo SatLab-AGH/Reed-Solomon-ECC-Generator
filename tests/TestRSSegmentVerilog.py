@@ -14,18 +14,9 @@ from cocotb.triggers import RisingEdge, Timer
 from cocotb_tools.runner import get_runner
 
 from generators.RSSegmentVerilog import RSSegmentVerilogGenerator, RSSegmentVerilogParameters
+from generators.logging_config import setup_logging
 
 logger = logging.getLogger("cocotb.segment")
-logger.setLevel(logging.DEBUG)
-proj_path = Path(__file__).resolve().parent.parent
-handle = RotatingFileHandler(
-    proj_path.joinpath("logs/segmentverilog.log"), maxBytes=5 * 1024 * 1024, backupCount=3
-)
-formatter = logging.Formatter(
-    "%(asctime)s | %(levelname)-8s | %(filename)s:%(lineno)d | %(funcName)s | %(message)s"
-)
-handle.setFormatter(formatter)
-logger.addHandler(handle)
 
 
 constant_multiplicants = [random.randint(0, 1023) for _ in range(20)] + [1, 1023]
@@ -35,7 +26,7 @@ params: RSSegmentVerilogParameters = {
     + "and addition module for custom Reed Solomon Encoding",
     "gf_degree": 10,
     "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
-    "output_path": Path("rtl"),
+    "output_path": Path("../build/rtl"),
     "constant_multplicants": list(constant_multiplicants),
 }
 _generator = RSSegmentVerilogGenerator(params)
@@ -72,11 +63,6 @@ async def segment_overseer(dut, cycles=200):
             f"Expected: {expected}, from dut got: {fo}, using A: {A}, bi: {bi}, fi: {fi}, bo: {bo}, fo: {fo}"
         )
         assert bi == bo, f"Expected: {bi}, from dut got: {bo}"
-
-
-@pytest.fixture(scope="session", autouse=True)
-def setup():
-    _generator.generate_to_file()
 
 
 @cocotb.test()
@@ -116,18 +102,24 @@ async def RS_Segment_Deg10_edge(dut):
     constant_multiplicants,
 )
 def test_runner(A):
+    setup_logging(f"RS_Segment_Deg10/{A}.log")
+    rtl_segment_path = f"RS_Segment_Deg10/{A}/RS_Segment_Deg10.v"
+    _generator.generate_to_file(rtl_segment_path)
+
     sim = os.getenv("SIM", "icarus")
 
     proj_path = Path(__file__).resolve().parent.parent
 
-    sources = [proj_path / "rtl/RS_Segment_Deg10.v"]
+    sources = [proj_path / "build/rtl" / rtl_segment_path]
+    hdl_toplevel = "RS_Segment_Deg10"
 
     runner = get_runner(sim)
     runner.build(
         sources=sources,
-        hdl_toplevel="RS_Segment_Deg10",
+        hdl_toplevel=hdl_toplevel,
         parameters={"GF_CONST_MULT": A},
         always=True,
+        build_dir=proj_path / "build/cocotb" / hdl_toplevel / str(A),
     )
 
     runner.test(

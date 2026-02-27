@@ -6,18 +6,9 @@ from typing import Required, TypedDict
 import galois
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
+import abc
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
-proj_path = Path(__file__).resolve().parent.parent
-handle = RotatingFileHandler(
-    proj_path.joinpath("logs/mastrovito.log"), maxBytes=5 * 1024 * 1024, backupCount=3
-)
-formatter = logging.Formatter(
-    "%(asctime)s | %(levelname)-8s | %(filename)s:%(lineno)d | %(funcName)s | %(message)s"
-)
-handle.setFormatter(formatter)
-logger.addHandler(handle)
 
 
 class MastrovitoMatrixParameters(TypedDict):
@@ -25,7 +16,7 @@ class MastrovitoMatrixParameters(TypedDict):
     irreducible_poly_coeffs: Required[np.ndarray]
 
 
-class MastrovitoMatrixGenerator:
+class MastrovitoMatrixGenerator(abc.ABC):
     """
     Calculates Mastrovito matrix to perform GF multiplication using only parralel XOR gates
     https://www.iiis.org/cds2010/cd2010imc/ccct_2010/paperspdf/ta999ne.pdf

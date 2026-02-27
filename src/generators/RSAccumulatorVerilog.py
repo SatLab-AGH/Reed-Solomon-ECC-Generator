@@ -1,3 +1,4 @@
+import copy
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -11,16 +12,6 @@ from generators.ModuleVerilog import ModuleInterface, ModuleVerilogGenerator, Mo
 from generators.RSSegmentVerilog import RSSegmentVerilogGenerator, RSSegmentVerilogParameters
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-proj_path = Path(__file__).resolve().parent.parent
-handle = RotatingFileHandler(
-    proj_path.joinpath("logs/accumulatorverilog.log"), maxBytes=5 * 1024 * 1024, backupCount=3
-)
-formatter = logging.Formatter(
-    "%(asctime)s | %(levelname)-8s | %(filename)s:%(lineno)d | %(funcName)s | %(message)s"
-)
-handle.setFormatter(formatter)
-logger.addHandler(handle)
 
 
 class RSAccumulatorVerilogParameters(ModuleVerilogParameters):
@@ -33,16 +24,20 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
     def __init__(self, params: RSAccumulatorVerilogParameters):
         self.params = params
         super().__init__(params)
-        self._load_global_config()
+        self.segment_generator = RSSegmentVerilogGenerator(self.params["segment_generator_params"])
+        self.set_generator_poly_len(self.params["n_parity_sym"])
+        self.description = f"Core arithmetic module of fully customizable cyclic Reed-Solomon encoder"
+        self.dependencies = f"RSSegmentVerilogGenerator"
 
+    def set_generator_poly_len(self, n_parity_syms: int):
         # init field first, then update coeffs
-        self.segment_generator = RSSegmentVerilogGenerator(params["segment_generator_params"])
+        self.params["n_parity_sym"] = n_parity_syms
         self.segment_generator.params["constant_multplicants"] = self.get_rs_generator_poly(
-            self.segment_generator, params["n_parity_sym"]
+            self.segment_generator, n_parity_syms
         )
         logger.info(f"Generator polynomial: {self.segment_generator.params['constant_multplicants']}")
         self.params["specific_params"] = (
-            f"\n//    Generator polynomial: {self.segment_generator.params['constant_multplicants']}\n"
+            f"\n//    Generator polynomial: {self.segment_generator.params['constant_multplicants']}"
         )
 
     @staticmethod
@@ -127,9 +122,9 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
             + self._generate_module_foot()
         )
 
-    def generate(self):
-        self.segment_generator.generate_to_file()
-        self.generate_to_file()
+    def generate_all_files(self, segment_path: Path | str, acc_filepath: Path | str):
+        self.segment_generator.generate_to_file(segment_path)
+        self.generate_to_file(acc_filepath)
 
 
 if __name__ == "__main__":
@@ -139,18 +134,16 @@ if __name__ == "__main__":
         + "of RS encoder accumulator type",
         "gf_degree": 10,
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
-        "output_path": Path("rtl"),
         "constant_multplicants": [0],  # To populate in init
     }
 
     params: RSAccumulatorVerilogParameters = {
         "design_name": "RS_Accumulator",
         "description": "",
-        "output_path": Path("rtl"),
         "word_size": 10,
         "n_parity_sym": 10,
         "segment_generator_params": seg_params,
     }
     RSAcc = RSAccumulatorVerilogGenerator(params)
 
-    RSAcc.generate()
+    RSAcc.generate_all_files("RS_Segment.v", "RS_Accumulator.v")
