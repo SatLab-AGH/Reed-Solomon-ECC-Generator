@@ -31,7 +31,6 @@ from cocotb.triggers import RisingEdge, Timer, with_timeout
 from cocotbext.axi import AxiStreamBus, AxiStreamSource, AxiStreamSink, AxiStreamFrame
 
 
-WORD_SIZE = 10
 FRAME_COUNT = 25
 MAX_FRAME_LEN = 32
 
@@ -58,8 +57,26 @@ async def random_backpressure(dut):
         await RisingEdge(dut.aclk)
 
 
+def check_data(tx_frame: AxiStreamFrame, rx_frame: AxiStreamFrame):
+    assert tx_frame.tdata == rx_frame.tdata[: len(tx_frame.tdata)], (
+        f"Payload data mismatch\n",
+        f"TX={tx_frame.tdata}\nRX={rx_frame.tdata[: len(tx_frame.tdata)]}",
+    )
+    ecc_len = int(cocotb.plusargs.get("ECC_LEN", "inf"))
+    word_size = int(cocotb.plusargs.get("WORD_SIZE", "inf"))
+    gf_prim = int(cocotb.plusargs.get("GF_PRIM", "inf"))
+    rsc = rs.RSCodec(nsym=ecc_len, nsize=(1 << word_size) - 1, prim=gf_prim, c_exp=word_size)
+    reference_ecc_frame = rsc.encode(tx_frame.tdata)
+    assert len(reference_ecc_frame) == len(rx_frame.tdata)
+    assert list(reference_ecc_frame) == rx_frame.tdata, (
+        f"Payload frame mismatch\n",
+        f"TX={reference_ecc_frame}\nRX={rx_frame.tdata}",
+    )
+
+
 @cocotb.test()
 async def RS_AXIS_random_one_streams(dut):
+    word_size = int(cocotb.plusargs.get("WORD_SIZE", "inf"))
     # create buses
     dut_sbus = AxiStreamBus(dut, prefix="axis_s")
     dut_mbus = AxiStreamBus(dut, prefix="axis_m")
@@ -70,7 +87,7 @@ async def RS_AXIS_random_one_streams(dut):
     # drivers
     axis_source = AxiStreamSource(dut_sbus, dut.aclk, dut.areset_n, reset_active_level=False)
     await RisingEdge(dut.aclk)
-    axis_sink = AxiStreamSink(dut_mbus, dut.aclk, dut.areset_n, reset_active_level=False, byte_size=WORD_SIZE)
+    axis_sink = AxiStreamSink(dut_mbus, dut.aclk, dut.areset_n, reset_active_level=False)
 
     await reset_dut(dut)
 
@@ -80,11 +97,11 @@ async def RS_AXIS_random_one_streams(dut):
     for frame_idx in range(FRAME_COUNT):
         length = random.randint(1, MAX_FRAME_LEN)
 
-        payload = [random.randint(0, (1 << WORD_SIZE) - 1) for _ in range(length)]
+        tx_payload = [random.randint(0, (1 << word_size) - 1) for _ in range(length)]
 
-        tx_frame = AxiStreamFrame(payload)  # pyright: ignore[reportArgumentType]
+        tx_frame = AxiStreamFrame(tx_payload)  # pyright: ignore[reportArgumentType]
 
-        dut._log.info(f"Sending frame {frame_idx}: {payload}")
+        dut._log.info(f"Sending frame {frame_idx}: {tx_payload}")
 
         await axis_source.send(tx_frame)
 
@@ -92,21 +109,8 @@ async def RS_AXIS_random_one_streams(dut):
 
         dut._log.info(f"Received frame {frame_idx}: {list(rx_frame.tdata)}")
 
-        # -----------------------
-        # Assertions
-        # -----------------------
+        check_data(tx_frame, rx_frame)
 
-        # if list(rx_frame.tdata) != payload:
-        #     raise ValueError(
-        #         f"Payload mismatch\n"
-        #         f"TX={payload}\n"
-        #         f"RX={list(rx_frame.tdata)}"
-        #     )
-
-        # if rx_frame.tlast != 1:
-        #     raise ValueError("Missing TLAST on received frame")
-
-    # idle cycles after test
     await Timer(100, "ns")
 
 
@@ -172,5 +176,9 @@ def test_runner(ecc_len):
     runner.test(
         hdl_toplevel="RS_AXIS",
         test_module="tests.TestRSAXISVerilog",
-        plusargs=[f"+ECC_LEN={ecc_len}", f"+GF_DEGREE={str(acc_params['word_size'])}"],
+        plusargs=[
+            f"+ECC_LEN={ecc_len}",
+            f"+WORD_SIZE={str(acc_params['word_size'])}",
+            f"+GF_PRIM={str(_generator.acc_verilog.segment_generator.irreducible_poly._integer)}",
+        ],
     )
