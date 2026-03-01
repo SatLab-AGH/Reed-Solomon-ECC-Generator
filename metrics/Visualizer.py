@@ -13,6 +13,8 @@ class BERCurve:
     data_len: int
     ecc_len: int
     word_size: int
+    ber_min: float
+    ber_max: float
     input_ber_lst: list[float]
     output_ber_lst: list[float]
 
@@ -69,7 +71,7 @@ def get_shannon_threshold(rate):
     return brentq(objective, 1e-9, 0.5)
 
 
-def plot_ber_tiles(curves, save_path: str | Path | None = None, dpi=300):
+def plot_ber_tiles(curves: list[BERCurve], save_path: str | Path | None = None, dpi=300):
     # group curves by word_size
     groups = {}
     for c in curves:
@@ -109,7 +111,7 @@ def plot_ber_tiles(curves, save_path: str | Path | None = None, dpi=300):
                 c.output_ber_lst,
                 marker="o",
                 markersize=4,
-                label=f"({c.data_len}, {c.ecc_len})",
+                label=f"Measured ({c.data_len + c.ecc_len}, {c.data_len})",
                 zorder=3,
             )
 
@@ -133,7 +135,7 @@ def plot_ber_tiles(curves, save_path: str | Path | None = None, dpi=300):
         ax.set_xscale("log")
         ax.set_yscale("log")
         ax.grid(True, which="both", linestyle=":", alpha=0.4)
-        ax.legend(fontsize=7, loc="lower right")  # Moved to lower right to avoid y=x line
+        ax.legend(fontsize=7, loc="upper left")  # Moved to lower right to avoid y=x line
 
     # hide unused axes
     for ax in axes[len(word_sizes) :]:
@@ -148,7 +150,7 @@ def plot_ber_tiles(curves, save_path: str | Path | None = None, dpi=300):
 def main():
     json_path = Path(__file__).parent / "ber_curve.json"
     fig_path = Path(__file__).parent / "figure.png"
-    curves = BERCurve.load_ber_json(json_path)
+    curves: list[BERCurve] = BERCurve.load_ber_json(json_path)  # pyright: ignore[reportAssignmentType]
     plot_ber_tiles(curves, save_path=fig_path)
 
 
