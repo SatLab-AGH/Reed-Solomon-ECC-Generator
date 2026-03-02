@@ -1,7 +1,7 @@
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Required, override
+from typing import NotRequired, Required, override
 
 import numpy as np
 
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class RSSegmentVerilogParameters(MastrovitoVerilogParameters):
-    constant_multplicants: Required[list[int]]
+    pass
 
 
 class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
@@ -101,4 +101,4 @@ if __name__ == "__main__":
     }
     mastroVer = RSSegmentVerilogGenerator(params)
 
-    mastroVer.generate_to_file("RS_Segment.v")
+    mastroVer.generate_to_dir()

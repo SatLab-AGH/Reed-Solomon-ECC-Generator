@@ -23,16 +23,12 @@ logger = logging.getLogger("cocotb.segment")
 proj_path = Path(__file__).resolve().parent.parent
 
 seg_params: RSSegmentVerilogParameters = {
-    "design_name": "RS_Segment",
-    "description": "",
     "gf_degree": 10,
     "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
     "constant_multplicants": [],
 }
 
 acc_params: RSAccumulatorVerilogParameters = {
-    "design_name": "RS_Accumulator",
-    "description": "",
     "word_size": 10,
     "n_parity_sym": 1,
     "segment_generator_params": seg_params,
@@ -139,16 +135,19 @@ async def RS_Accumulator_random(dut):
 )
 def test_runner(ecc_len):
     setup_logging(f"RS_Accumulator/{ecc_len}.log")
-    rtl_acc_path = f"RS_Accumulator/{ecc_len}/RS_Accumulator.v"
-    rtl_seg_path = f"RS_Accumulator/{ecc_len}/RS_Segment_Deg10.v"
+    rtl_acc_dir = f"RS_Accumulator/{ecc_len}"
+    rtl_seg_dir = f"RS_Accumulator/{ecc_len}"
 
     _generator.set_generator_poly_len(ecc_len)
-    _generator.generate_all_files(rtl_seg_path, rtl_acc_path)
+    _generator.generate_all_to_dir(rtl_seg_dir, rtl_acc_dir)
     sim = os.getenv("SIM", "icarus")
 
     proj_path = Path(__file__).resolve().parent.parent
 
-    sources = [proj_path / "build/rtl/" / rtl_acc_path, proj_path / "build/rtl" / rtl_seg_path]
+    sources = [
+        proj_path / "build/rtl/" / rtl_acc_dir / "RS_Accumulator.v",
+        proj_path / "build/rtl" / rtl_seg_dir / "RS_Segment.v",
+    ]
     hdl_toplevel = "RS_Accumulator"
 
     runner = get_runner(sim)

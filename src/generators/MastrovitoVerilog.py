@@ -3,7 +3,7 @@ import logging
 import pathlib
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Required
+from typing import NotRequired, Required
 
 import numpy as np
 from numpy.typing import NDArray
@@ -22,7 +22,7 @@ proj_path = Path(__file__).resolve().parent.parent
 
 
 class MastrovitoVerilogParameters(ModuleVerilogParameters, MastrovitoMatrixParameters):
-    constant_multplicants: Required[list[int]]
+    constant_multplicants: NotRequired[list[int]]
 
 
 class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerator):
@@ -41,7 +41,7 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
         self.params["specific_params"] = (
             f"\n//    gf_degree: {self.params['gf_degree']}"
             f"\n//    gf irreducible_poly_coeffs: {self.params['irreducible_poly_coeffs']}"
-            f"\n//    available multplicants: {self.params['constant_multplicants']}"
+            f"\n//    available multplicants: {self.params.get('constant_multplicants')}"
         )
 
         logger.info(
@@ -191,4 +191,4 @@ if __name__ == "__main__":
     }
     mastroVer = MastrovitoVerilogGenerator(params)
 
-    mastroVer.generate_to_file("MastrovitoVerilog.v")
+    mastroVer.generate_to_dir()

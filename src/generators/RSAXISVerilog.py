@@ -86,10 +86,13 @@ class RSAXISVerilogGenerator(ModuleVerilogGenerator):
         return self._generate_module_header() + self._generate_module_body() + self._generate_module_foot()
 
     def generate_all_files(
-        self, segment_path: Path | str, acc_filepath: Path | str, axis_filepath: Path | str
+        self,
+        segment_path: Path | str | None = None,
+        acc_filepath: Path | str | None = None,
+        axis_filepath: Path | str | None = None,
     ):
-        self.acc_verilog.generate_all_files(segment_path, acc_filepath)
-        self.generate_to_file(axis_filepath)
+        self.acc_verilog.generate_all_to_dir(segment_path, acc_filepath)
+        self.generate_to_dir(axis_filepath)
 
 
 if __name__ == "__main__":
@@ -111,4 +114,4 @@ if __name__ == "__main__":
 
     RSAcc = RSAXISVerilogGenerator(params)
 
-    RSAcc.generate_all_files("RS_Segment.v", "RS_Accumulator.v", "RS_AXIS.v")
+    RSAcc.generate_all_files()

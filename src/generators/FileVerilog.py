@@ -19,8 +19,10 @@ class FileVerilogGenerator(abc.ABC):
     def __init__(self, params: FileVerilogParameters) -> None:
         self.params = params
         self._load_global_file_config()
+        self.design_name: str | None = None
         self.description: str | None = None
         self.dependencies: str | None = None
+        self.filename = str(self.design_name) + ".v"
         self.filepath = Path(__file__).resolve()
         self.template_path = self.filepath.parent / "templates"
         self.proj_path = Path(__file__).resolve().parent.parent.parent
@@ -58,8 +60,9 @@ class FileVerilogGenerator(abc.ABC):
             additional_comments=config.get("additional_comments"),
         )
 
-    def generate_to_file(self, filepath: str | Path):
-        path = self.rtl_build_path.joinpath(filepath)
+    def generate_to_dir(self, dir: str | Path | None = None):
+        dir = "" if dir is None else dir
+        path = self.rtl_build_path.joinpath(dir).joinpath(str(self.design_name) + ".v")
 
         Path(path.parent).mkdir(exist_ok=True, parents=True)
 

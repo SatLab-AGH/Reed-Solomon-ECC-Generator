@@ -99,15 +99,15 @@ async def RS_Segment_Deg10_edge(dut):
 )
 def test_runner(A):
     setup_logging(f"RS_Segment_Deg10/{A}.log")
-    rtl_segment_path = f"RS_Segment_Deg10/{A}/RS_Segment_Deg10.v"
-    _generator.generate_to_file(rtl_segment_path)
+    rtl_segment_dir = f"RS_Segment_Deg10/{A}"
+    _generator.generate_to_dir(rtl_segment_dir)
 
     sim = os.getenv("SIM", "icarus")
 
     proj_path = Path(__file__).resolve().parent.parent
 
-    sources = [proj_path / "build/rtl" / rtl_segment_path]
     hdl_toplevel = "RS_Segment"
+    sources = [proj_path / "build/rtl" / rtl_segment_dir / (hdl_toplevel + ".v")]
 
     runner = get_runner(sim)
     runner.build(

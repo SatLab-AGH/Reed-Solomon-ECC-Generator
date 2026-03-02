@@ -122,45 +122,39 @@ def test_runner(ecc_len):
     setup_logging(f"RS_AXIS/{ecc_len}.log")
 
     seg_params: RSSegmentVerilogParameters = {
-        "design_name": "RS_Segment",
-        "description": "",
         "gf_degree": 10,
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
         "constant_multplicants": [],
     }
 
     acc_params: RSAccumulatorVerilogParameters = {
-        "design_name": "RS_Accumulator",
-        "description": "",
         "word_size": 10,
         "n_parity_sym": 10,
         "segment_generator_params": seg_params,
     }
 
     axis_params: RSAXISVerilogParameters = {
-        "design_name": "RS_AXIS",
-        "description": "",
         "acc_params": acc_params,
     }
 
     _generator = RSAXISVerilogGenerator(axis_params)
 
-    rtl_axis_path = f"RS_AXIS/{ecc_len}/RS_AXIS.v"
-    rtl_acc_path = f"RS_AXIS/{ecc_len}/RS_Accumulator.v"
-    rtl_seg_path = f"RS_AXIS/{ecc_len}/RS_Segment_Deg10.v"
+    rtl_axis_dir = f"RS_AXIS/{ecc_len}"
+    rtl_acc_path = f"RS_AXIS/{ecc_len}"
+    rtl_seg_path = f"RS_AXIS/{ecc_len}"
 
     _generator.params["acc_params"]["n_parity_sym"] = ecc_len
     _generator.acc_verilog.set_generator_poly_len(ecc_len)
-    _generator.generate_all_files(rtl_seg_path, rtl_acc_path, rtl_axis_path)
+    _generator.generate_all_files(rtl_seg_path, rtl_acc_path, rtl_axis_dir)
 
     sim = os.getenv("SIM", "icarus")
 
     proj_path = Path(__file__).resolve().parent.parent
 
     sources = [
-        proj_path / "build/rtl" / rtl_axis_path,
-        proj_path / "build/rtl" / rtl_acc_path,
-        proj_path / "build/rtl" / rtl_seg_path,
+        proj_path / "build/rtl" / rtl_axis_dir / "RS_AXIS.v",
+        proj_path / "build/rtl" / rtl_acc_path / "RS_Accumulator.v",
+        proj_path / "build/rtl" / rtl_seg_path / "RS_Segment.v",
     ]
 
     hdl_toplevel = "RS_AXIS"

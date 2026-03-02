@@ -11,16 +11,43 @@ from generators.RSSegmentVerilog import RSSegmentVerilogParameters
 proj_path = Path(__file__).parent.parent
 
 
+def integer_to_poly(integer: int, order: int, degree: int | None = None) -> list[int]:
+    """
+    Converts the integer representation of the polynomial to its coefficients in descending order.
+    """
+    if order == 2:
+        c = [int(bit) for bit in bin(integer)[2:]]
+    else:
+        c = []  # Coefficients in ascending order
+        while integer > 0:
+            q, r = divmod(integer, order)
+            c.append(r)
+            integer = q
+
+        # Ensure the coefficient list is not empty
+        if not c:
+            c = [0]
+
+        c = c[::-1]  # Coefficients in descending order
+
+    # Set to a fixed degree if requested
+    if degree is not None:
+        assert degree >= len(c) - 1
+        c = [0] * (degree - len(c) + 1) + c
+
+    return c
+
+
 def get_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
-    p.add_argument("--ECC_LEN", nargs="?", type=int, default=64)
+    p.add_argument("--ECC_LEN", nargs="?", type=int, default=8)
     p.add_argument("--WORD_SIZE", nargs="?", type=int, default=8)
     p.add_argument("--IRR_GF_POLY", nargs="?", type=int, default=None)
-    p.add_argument("--OUTPUT_DIR", nargs="?", type=int, default=None)
+    p.add_argument("--OUTPUT_DIR", nargs="?", type=Path, default=None)
     args = p.parse_args()
 
     args.IRR_GF_POLY = (
-        galois.irreducible_poly(2, args.WORD_SIZE) if args.IRR_GF_POLY is None else args.IRR_GF_POLY
+        galois.irreducible_poly(2, args.WORD_SIZE)._integer if args.IRR_GF_POLY is None else args.IRR_GF_POLY
     )
     args.OUTPUT_DIR = proj_path / "products" if args.OUTPUT_DIR is None else Path(args.OUTPUT_DIR)
 
@@ -29,30 +56,31 @@ def get_args() -> argparse.Namespace:
 
 def main():
     args = get_args()
-    os.makedirs(proj_path / "products") if args.OUTPUT_DIR is None else os.makedirs(args.OUTPUT_DIR)
+    os.makedirs(proj_path / "products/", exist_ok=True) if args.OUTPUT_DIR is None else os.makedirs(
+        args.OUTPUT_DIR, exist_ok=True
+    )
 
+    coeffs = integer_to_poly(args.IRR_GF_POLY, 2, args.WORD_SIZE)
     seg_params: RSSegmentVerilogParameters = {
-        "design_name": "RS_Segment",
-        "gf_degree": 10,
-        "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
-        "constant_multplicants": [0],  # To populate in init
+        "gf_degree": args.WORD_SIZE,
+        "irreducible_poly_coeffs": np.array(coeffs),
     }
 
     acc_params: RSAccumulatorVerilogParameters = {
-        "design_name": "RS_Accumulator",
-        "word_size": 10,
-        "n_parity_sym": 10,
+        "word_size": args.WORD_SIZE,
+        "n_parity_sym": args.ECC_LEN,
         "segment_generator_params": seg_params,
     }
 
     params: RSAXISVerilogParameters = {
-        "design_name": "RS_AXIS",
         "acc_params": acc_params,
     }
 
     RSAxis = RSAXISVerilogGenerator(params)
 
-    RSAxis.generate_all_files("a", "b", "c")
+    RSAxis.generate_all_files("", "", "")
+    print(RSAxis.filename)
+    # os.rename()
 
 
 if __name__ == "__main__":

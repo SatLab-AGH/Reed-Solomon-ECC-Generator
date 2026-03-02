@@ -22,12 +22,8 @@ logger = logging.getLogger(__name__)
 
 constant_multiplicants = [random.randint(0, 1023) for _ in range(20)]
 params: MastrovitoVerilogParameters = {
-    "design_name": "GF_Mastrovito_Multiplier_Adder",
-    "description": "Zero Latency Galois Field 2^n multiplication "
-    + "and addition module for custom Reed Solomon Encoding",
     "gf_degree": 10,
     "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
-    "output_path": Path("../build/rtl"),
     "constant_multplicants": list(constant_multiplicants),
 }
 _generator = MastrovitoVerilogGenerator(params)
@@ -59,15 +55,15 @@ async def dff_simple_test(dut):
 )
 def test_runner(A):
     setup_logging(f"GF_Mastrovito_Multiplier_Adder_Deg10/{A}.log")
-    rtl_MMA_path = f"GF_Mastrovito_Multiplier_Adder_Deg10/{A}/GF_Mastrovito_Multiplier_Adder_Deg10.v"
-    _generator.generate_to_file(rtl_MMA_path)
+    rtl_MMA_path = f"GF_Mastrovito_Multiplier_Adder_Deg10/{A}"
+    _generator.generate_to_dir(rtl_MMA_path)
 
     sim = os.getenv("SIM", "icarus")
 
     proj_path = Path(__file__).resolve().parent.parent
 
-    sources = [proj_path / "build/rtl" / rtl_MMA_path]
     hdl_toplevel = "GF_Mastrovito_Multiplier_Adder_Deg10"
+    sources = [proj_path / "build/rtl" / rtl_MMA_path / (hdl_toplevel + ".v")]
 
     runner = get_runner(sim)
     runner.build(

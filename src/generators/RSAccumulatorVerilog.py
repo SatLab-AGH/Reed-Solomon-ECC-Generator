@@ -123,9 +123,11 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
             + self._generate_module_foot()
         )
 
-    def generate_all_files(self, segment_path: Path | str, acc_filepath: Path | str):
-        self.segment_generator.generate_to_file(segment_path)
-        self.generate_to_file(acc_filepath)
+    def generate_all_to_dir(
+        self, segment_path: Path | str | None = None, acc_filepath: Path | str | None = None
+    ):
+        self.segment_generator.generate_to_dir(segment_path)
+        self.generate_to_dir(acc_filepath)
 
 
 if __name__ == "__main__":
@@ -142,4 +144,4 @@ if __name__ == "__main__":
     }
     RSAcc = RSAccumulatorVerilogGenerator(params)
 
-    RSAcc.generate_all_files("RS_Segment.v", "RS_Accumulator.v")
+    RSAcc.generate_all_to_dir()

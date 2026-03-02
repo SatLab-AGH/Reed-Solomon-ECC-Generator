@@ -53,7 +53,6 @@ class ModuleVerilogGenerator(FileVerilogGenerator):
         super().__init__(params)
         self.params = params
         self._load_global_file_config()
-        self.design_name = None
 
     @staticmethod
     def flatten_interfaces(
