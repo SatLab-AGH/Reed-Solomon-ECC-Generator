@@ -26,8 +26,9 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
         super().__init__(params)
         self.segment_generator = RSSegmentVerilogGenerator(self.params["segment_generator_params"])
         self.set_generator_poly_len(self.params["n_parity_sym"])
-        self.description = f"Core arithmetic module of fully customizable cyclic Reed-Solomon encoder"
-        self.dependencies = f"RSSegmentVerilogGenerator"
+        self.design_name = "RS_Accumulator"
+        self.description = "Core arithmetic module of fully customizable cyclic Reed-Solomon encoder"
+        self.dependencies = "RSSegmentVerilogGenerator"
 
     def set_generator_poly_len(self, n_parity_syms: int):
         # init field first, then update coeffs
@@ -129,17 +130,12 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
 
 if __name__ == "__main__":
     seg_params: RSSegmentVerilogParameters = {
-        "design_name": "RS_Segment",
-        "description": "Zero latency backward and one latency forwards building block "
-        + "of RS encoder accumulator type",
         "gf_degree": 10,
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
         "constant_multplicants": [0],  # To populate in init
     }
 
     params: RSAccumulatorVerilogParameters = {
-        "design_name": "RS_Accumulator",
-        "description": "",
         "word_size": 10,
         "n_parity_sym": 10,
         "segment_generator_params": seg_params,

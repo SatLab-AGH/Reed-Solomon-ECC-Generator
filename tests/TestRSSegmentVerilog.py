@@ -21,12 +21,8 @@ logger = logging.getLogger("cocotb.segment")
 
 constant_multiplicants = [random.randint(0, 1023) for _ in range(20)] + [1, 1023]
 params: RSSegmentVerilogParameters = {
-    "design_name": "RS_Segment",
-    "description": "Zero Latency Galois Field 2^n multiplication "
-    + "and addition module for custom Reed Solomon Encoding",
     "gf_degree": 10,
     "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
-    "output_path": Path("../build/rtl"),
     "constant_multplicants": list(constant_multiplicants),
 }
 _generator = RSSegmentVerilogGenerator(params)
@@ -111,7 +107,7 @@ def test_runner(A):
     proj_path = Path(__file__).resolve().parent.parent
 
     sources = [proj_path / "build/rtl" / rtl_segment_path]
-    hdl_toplevel = "RS_Segment_Deg10"
+    hdl_toplevel = "RS_Segment"
 
     runner = get_runner(sim)
     runner.build(
@@ -123,6 +119,6 @@ def test_runner(A):
     )
 
     runner.test(
-        hdl_toplevel="RS_Segment_Deg10",
+        hdl_toplevel="RS_Segment",
         test_module="tests.TestRSSegmentVerilog",
     )

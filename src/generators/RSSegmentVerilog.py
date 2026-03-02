@@ -23,6 +23,7 @@ class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
             f"One cycle latency galois field multiplier-adder (A*B+C) implemented as XOR Mastrovito matrix with predefined A.\n"
             "//\t\t\tImplemented Backward bypass for Reed-Solomon encoder implementation."
         )
+        self.design_name = "RS_Segment"
 
     # Verilog function calls generation
     @staticmethod
@@ -94,9 +95,6 @@ class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
 if __name__ == "__main__":
     setup_logging(f"RS_Segment/default.log")
     params: RSSegmentVerilogParameters = {
-        "design_name": "RS_Segment",
-        "description": "Zero latency backward and one latency forwards building block "
-        + "of RS encoder accumulator type",
         "gf_degree": 10,
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
         "constant_multplicants": [0, 1, 2, 1023, 195, 175, 677, 918, 464, 463, 997, 498, 169],

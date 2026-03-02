@@ -36,7 +36,7 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
         MastrovitoMatrixGenerator.__init__(self, params)
         ModuleVerilogGenerator.__init__(self, params)
         self._load_global_file_config()
-        self.params["design_name"] += f"_Deg{params['gf_degree']}"
+        self.design_name = f"GF_Mastrovito_Multiplier_Adder_Deg{params['gf_degree']}"
         self.description = f"Zero latency, combinatorial galois field multiplier-adder (A*B+C) implemented as XOR Mastrovito matrix with predefined A."
         self.params["specific_params"] = (
             f"\n//    gf_degree: {self.params['gf_degree']}"
@@ -185,9 +185,6 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
 if __name__ == "__main__":
     setup_logging(f"MastrovitoVerilog/default.log")
     params: MastrovitoVerilogParameters = {
-        "design_name": "GF_Mastrovito_Multiplier_Adder",
-        "description": "Zero Latency Galois Field 2^n multiplication "
-        + "and addition module for custom Reed Solomon Encoding",
         "gf_degree": 10,
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
         "constant_multplicants": [0, 1, 2, 6, 511, 513, 1023],

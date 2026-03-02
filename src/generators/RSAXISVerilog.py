@@ -23,6 +23,7 @@ class RSAXISVerilogGenerator(ModuleVerilogGenerator):
         self.params = parameters
         super().__init__(parameters)
         self.acc_verilog = RSAccumulatorVerilogGenerator(self.params["acc_params"])
+        self.design_name = "RS_AXIS"
         self.description = (
             "AXI stream module, appends arbitrary RS checksum to AXI stream data after TLAST_s signal is asserted.\n"
             "//\t\t\t AXI stream data length control for RS utilization is user duty, checksum length is fixed."
@@ -52,7 +53,7 @@ class RSAXISVerilogGenerator(ModuleVerilogGenerator):
         return self.generic_generate_module_header(interfaces)
 
     def _generate_module_foot(self) -> str:
-        return f"\nendmodule // {self.params['design_name']}\n"
+        return f"\nendmodule // {self.design_name}\n"
 
     def _generate_accumulator_instance(self) -> str:
         template = self.acc_verilog.generic_generate_module_instance_template()
@@ -93,25 +94,18 @@ class RSAXISVerilogGenerator(ModuleVerilogGenerator):
 
 if __name__ == "__main__":
     seg_params: RSSegmentVerilogParameters = {
-        "design_name": "RS_Segment",
-        "description": "Zero latency backward and one latency forwards building block "
-        + "of RS encoder accumulator type",
         "gf_degree": 10,
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
         "constant_multplicants": [0],  # To populate in init
     }
 
     acc_params: RSAccumulatorVerilogParameters = {
-        "design_name": "RS_Accumulator",
-        "description": "",
         "word_size": 10,
         "n_parity_sym": 10,
         "segment_generator_params": seg_params,
     }
 
     params: RSAXISVerilogParameters = {
-        "design_name": "RS_AXIS",
-        "description": "",
         "acc_params": acc_params,
     }
 

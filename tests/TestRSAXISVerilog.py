@@ -75,7 +75,7 @@ def check_data(tx_frame: AxiStreamFrame, rx_frame: AxiStreamFrame):
 
 
 @cocotb.test()
-async def RS_AXIS_random_one_streams(dut):
+async def RS_AXIS_random_streams(dut):
     word_size = int(cocotb.plusargs.get("WORD_SIZE", "inf"))
     # create buses
     dut_sbus = AxiStreamBus(dut, prefix="axis_s")
