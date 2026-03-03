@@ -1,12 +1,12 @@
 import argparse
+import json
 import os
 from pathlib import Path
+import shutil
 import galois
 import numpy as np
 
 from generators.RSAXISVerilog import RSAXISVerilogGenerator, RSAXISVerilogParameters
-from generators.RSAccumulatorVerilog import RSAccumulatorVerilogParameters
-from generators.RSSegmentVerilog import RSSegmentVerilogParameters
 
 proj_path = Path(__file__).parent.parent
 
@@ -38,18 +38,46 @@ def integer_to_poly(integer: int, order: int, degree: int | None = None) -> list
     return c
 
 
+def load_config(path: Path):
+    if not path.exists():
+        raise FileNotFoundError(f"Config file does not exist: {path}")
+
+    if not path.is_file():
+        raise ValueError(f"Config path is not a file: {path}")
+
+    try:
+        with open(path, "r") as f:
+            config = json.load(f)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in config file: {e}")
+
+    return config
+
+
 def get_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
     p.add_argument("--ECC_LEN", nargs="?", type=int, default=8)
     p.add_argument("--WORD_SIZE", nargs="?", type=int, default=8)
     p.add_argument("--IRR_GF_POLY", nargs="?", type=int, default=None)
     p.add_argument("--OUTPUT_DIR", nargs="?", type=Path, default=None)
+    p.add_argument("--CONFIG", nargs="?", type=Path, default=None)
     args = p.parse_args()
 
-    args.IRR_GF_POLY = (
-        galois.irreducible_poly(2, args.WORD_SIZE)._integer if args.IRR_GF_POLY is None else args.IRR_GF_POLY
-    )
-    args.OUTPUT_DIR = proj_path / "products" if args.OUTPUT_DIR is None else Path(args.OUTPUT_DIR)
+    if args.CONFIG:
+        config = load_config(args.CONFIG)
+        args.IRR_GF_POLY = int(config["irr_gf_poly"])
+        args.WORD_SIZE = int(config["word_size"])
+        args.ECC_LEN = int(config["ecc_len"])
+        args.OUTPUT_DIR = Path(config["outout_dir"])
+    else:
+        args.IRR_GF_POLY = (
+            galois.irreducible_poly(2, args.WORD_SIZE)._integer
+            if args.IRR_GF_POLY is None
+            else args.IRR_GF_POLY
+        )
+        args.OUTPUT_DIR = (
+            proj_path / "products" if args.OUTPUT_DIR is None else Path(args.OUTPUT_DIR).resolve()
+        )
 
     return args
 
@@ -61,26 +89,26 @@ def main():
     )
 
     coeffs = integer_to_poly(args.IRR_GF_POLY, 2, args.WORD_SIZE)
-    seg_params: RSSegmentVerilogParameters = {
-        "gf_degree": args.WORD_SIZE,
-        "irreducible_poly_coeffs": np.array(coeffs),
-    }
-
-    acc_params: RSAccumulatorVerilogParameters = {
-        "word_size": args.WORD_SIZE,
-        "n_parity_sym": args.ECC_LEN,
-        "segment_generator_params": seg_params,
-    }
 
     params: RSAXISVerilogParameters = {
-        "acc_params": acc_params,
+        "irreducible_poly_coeffs": np.array(coeffs),
+        "word_size": args.WORD_SIZE,
+        "n_parity_sym": args.ECC_LEN,
     }
 
     RSAxis = RSAXISVerilogGenerator(params)
 
     RSAxis.generate_all_files("", "", "")
     print(RSAxis.filename)
-    # os.rename()
+
+    build_filepaths = [
+        Path("build/rtl/RS_Segment.v"),
+        Path("build/rtl/RS_AXIS.v"),
+        Path("build/rtl/RS_Accumulator.v"),
+    ]
+
+    for filepath in build_filepaths:
+        shutil.move(filepath, dst=args.OUTPUT_DIR / os.path.basename(filepath))
 
 
 if __name__ == "__main__":
