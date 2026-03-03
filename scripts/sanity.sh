@@ -1,3 +1,7 @@
+set -eu
+
+source ./.venv/bin/activate
+
 cd src
 
 python3 -m generators.MastrovitoMatrix
