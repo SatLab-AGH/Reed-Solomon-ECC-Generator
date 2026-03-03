@@ -121,20 +121,10 @@ async def RS_AXIS_random_streams(dut):
 def test_runner(ecc_len):
     setup_logging(f"RS_AXIS/{ecc_len}.log")
 
-    seg_params: RSSegmentVerilogParameters = {
-        "gf_degree": 10,
-        "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
-        "constant_multplicants": [],
-    }
-
-    acc_params: RSAccumulatorVerilogParameters = {
+    axis_params: RSAXISVerilogParameters = {
         "word_size": 10,
         "n_parity_sym": 10,
-        "segment_generator_params": seg_params,
-    }
-
-    axis_params: RSAXISVerilogParameters = {
-        "acc_params": acc_params,
+        "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
     }
 
     _generator = RSAXISVerilogGenerator(axis_params)
@@ -143,7 +133,7 @@ def test_runner(ecc_len):
     rtl_acc_path = f"RS_AXIS/{ecc_len}"
     rtl_seg_path = f"RS_AXIS/{ecc_len}"
 
-    _generator.params["acc_params"]["n_parity_sym"] = ecc_len
+    _generator.params["n_parity_sym"] = ecc_len
     _generator.acc_verilog.set_generator_poly_len(ecc_len)
     _generator.generate_all_files(rtl_seg_path, rtl_acc_path, rtl_axis_dir)
 
@@ -172,7 +162,7 @@ def test_runner(ecc_len):
         test_module="tests.TestRSAXISVerilog",
         plusargs=[
             f"+ECC_LEN={ecc_len}",
-            f"+WORD_SIZE={str(acc_params['word_size'])}",
+            f"+WORD_SIZE={str(axis_params['word_size'])}",
             f"+GF_PRIM={str(_generator.acc_verilog.segment_generator.irreducible_poly._integer)}",
         ],
     )

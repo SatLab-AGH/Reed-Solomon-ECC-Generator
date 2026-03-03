@@ -36,16 +36,16 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
         MastrovitoMatrixGenerator.__init__(self, params)
         ModuleVerilogGenerator.__init__(self, params)
         self._load_global_file_config()
-        self.design_name = f"GF_Mastrovito_Multiplier_Adder_Deg{params['gf_degree']}"
+        self.design_name = f"GF_Mastrovito_Multiplier_Adder_Deg{params['word_size']}"
         self.description = f"Zero latency, combinatorial galois field multiplier-adder (A*B+C) implemented as XOR Mastrovito matrix with predefined A."
         self.params["specific_params"] = (
-            f"\n//    gf_degree: {self.params['gf_degree']}"
+            f"\n//    word_size: {self.params['word_size']}"
             f"\n//    gf irreducible_poly_coeffs: {self.params['irreducible_poly_coeffs']}"
             f"\n//    available multplicants: {self.params.get('constant_multplicants')}"
         )
 
         logger.info(
-            f"Initializing Mastrovito matrix generator with degree {params['gf_degree']}"
+            f"Initializing Mastrovito matrix generator with degree {params['word_size']}"
             f" and irreducible polynomial {params['irreducible_poly_coeffs']}"
         )
 
@@ -87,7 +87,7 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
 
     def _generate_mult_function(self, A) -> str:
         mastrovito_matrix = self.get_mastrovito(A)
-        verilog_function_string: str = self._generate_mult_function_header(A, self.gf_degree)
+        verilog_function_string: str = self._generate_mult_function_header(A, self.word_size)
         verilog_function_string += self._generate_mult_function_body(mastrovito_matrix)
         verilog_function_string += self._generate_mult_function_foot()
 
@@ -110,7 +110,7 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
         multiplicants = list(set(multiplicants))
         multiplicants.sort()
 
-        outstring += self._generate_add_function(self.gf_degree)
+        outstring += self._generate_add_function(self.word_size)
 
         for multiplicant in multiplicants:
             outstring += self._generate_mult_function(multiplicant)
@@ -134,7 +134,7 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
 
     def _generate_module_header(self) -> str:
         logger.info("Generating module header")
-        degree = self.gf_degree
+        degree = self.word_size
 
         interfaces = [
             (
@@ -158,14 +158,14 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
         multiplicants = list(set(multiplicants))
 
         for multiplicant in multiplicants:
-            outstring += self._generate_mult_if(multiplicant, self.gf_degree)
+            outstring += self._generate_mult_if(multiplicant, self.word_size)
         outstring += (
             "begin \t\t\t\t\t: generate_block_mult_INVALID\n"
             + '    $fatal("Not generated Constant Multiplicant Selected: %d.", GF_CONST_MULT);\n'
             + "end\n\n"
         )
 
-        outstring += self._generate_sum_if(self.gf_degree)
+        outstring += self._generate_sum_if(self.word_size)
 
         outstring += "endgenerate\n\n"
 
@@ -185,7 +185,7 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
 if __name__ == "__main__":
     setup_logging(f"MastrovitoVerilog/default.log")
     params: MastrovitoVerilogParameters = {
-        "gf_degree": 10,
+        "word_size": 10,
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
         "constant_multplicants": [0, 1, 2, 6, 511, 513, 1023],
     }

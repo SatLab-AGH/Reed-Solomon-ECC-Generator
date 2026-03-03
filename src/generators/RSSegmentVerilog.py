@@ -95,7 +95,7 @@ class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
 if __name__ == "__main__":
     setup_logging(f"RS_Segment/default.log")
     params: RSSegmentVerilogParameters = {
-        "gf_degree": 10,
+        "word_size": 10,
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
         "constant_multplicants": [0, 1, 2, 1023, 195, 175, 677, 918, 464, 463, 997, 498, 169],
     }

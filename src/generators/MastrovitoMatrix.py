@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class MastrovitoMatrixParameters(TypedDict):
-    gf_degree: Required[int]
+    word_size: Required[int]
     irreducible_poly_coeffs: Required[np.ndarray]
 
 
@@ -24,7 +24,8 @@ class MastrovitoMatrixGenerator(abc.ABC):
     """
 
     def __init__(self, params: MastrovitoMatrixParameters) -> None:
-        self.gf_degree = params["gf_degree"]
+        self.word_size = params["word_size"]
+        self.gf_degree = self.word_size
         self.gf2_field = galois.GF(2, 1)
         self.irreducible_poly = galois.Poly(params["irreducible_poly_coeffs"], self.gf2_field)
         self.gf_field = galois.GF(2, self.gf_degree, irreducible_poly=self.irreducible_poly)

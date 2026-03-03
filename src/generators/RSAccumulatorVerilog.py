@@ -14,17 +14,15 @@ from generators.RSSegmentVerilog import RSSegmentVerilogGenerator, RSSegmentVeri
 logger = logging.getLogger(__name__)
 
 
-class RSAccumulatorVerilogParameters(ModuleVerilogParameters):
-    word_size: Required[int]
+class RSAccumulatorVerilogParameters(RSSegmentVerilogParameters):
     n_parity_sym: Required[int]
-    segment_generator_params: Required[RSSegmentVerilogParameters]
 
 
 class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
     def __init__(self, params: RSAccumulatorVerilogParameters):
         self.params = params
         super().__init__(params)
-        self.segment_generator = RSSegmentVerilogGenerator(self.params["segment_generator_params"])
+        self.segment_generator = RSSegmentVerilogGenerator(params)
         self.set_generator_poly_len(self.params["n_parity_sym"])
         self.design_name = "RS_Accumulator"
         self.description = "Core arithmetic module of fully customizable cyclic Reed-Solomon encoder"
@@ -84,7 +82,8 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
     def _generate_module_body(self):
         word_size = self.params["word_size"]
         module_body: str = ""
-        gen_coefs = self.segment_generator.params["constant_multplicants"]
+        gen_coefs = self.params.get("constant_multplicants")
+        assert gen_coefs
         bi = None
         bo = None
         fi = None
@@ -131,16 +130,10 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
 
 
 if __name__ == "__main__":
-    seg_params: RSSegmentVerilogParameters = {
-        "gf_degree": 10,
-        "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
-        "constant_multplicants": [0],  # To populate in init
-    }
-
     params: RSAccumulatorVerilogParameters = {
         "word_size": 10,
         "n_parity_sym": 10,
-        "segment_generator_params": seg_params,
+        "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
     }
     RSAcc = RSAccumulatorVerilogGenerator(params)
 

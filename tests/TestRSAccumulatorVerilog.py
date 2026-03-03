@@ -22,16 +22,11 @@ logger = logging.getLogger("cocotb.segment")
 
 proj_path = Path(__file__).resolve().parent.parent
 
-seg_params: RSSegmentVerilogParameters = {
-    "gf_degree": 10,
-    "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
-    "constant_multplicants": [],
-}
-
 acc_params: RSAccumulatorVerilogParameters = {
     "word_size": 10,
     "n_parity_sym": 1,
-    "segment_generator_params": seg_params,
+    "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
+    "constant_multplicants": [],
 }
 
 _generator = RSAccumulatorVerilogGenerator(acc_params)

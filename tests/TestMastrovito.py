@@ -31,7 +31,7 @@ pytestmark = pytest.mark.parametrize("gf_degree, A_constant, g_poly", generate_r
 
 def test_MastrovitoMatrixGenerator(gf_degree, A_constant, g_poly: galois.Poly):
     setup_logging(Path(f"MastrovitoMatrixGenerator/{gf_degree}_{A_constant}_{g_poly._integer}.log"))
-    params = MastrovitoMatrixParameters(gf_degree=gf_degree, irreducible_poly_coeffs=g_poly.coefficients())
+    params = MastrovitoMatrixParameters(word_size=gf_degree, irreducible_poly_coeffs=g_poly.coefficients())
     mastro = MastrovitoMatrixGenerator(params)
     gal_field = mastro.gf_field
     gf_max = 1 << gf_degree

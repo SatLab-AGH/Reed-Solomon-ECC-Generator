@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 constant_multiplicants = [random.randint(0, 1023) for _ in range(20)]
 params: MastrovitoVerilogParameters = {
-    "gf_degree": 10,
+    "word_size": 10,
     "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
     "constant_multplicants": list(constant_multiplicants),
 }

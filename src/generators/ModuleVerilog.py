@@ -14,7 +14,6 @@ proj_path = Path(__file__).resolve().parent.parent
 
 class ModuleVerilogParameters(FileVerilogParameters):
     dependencies: NotRequired[str]
-    additional_comments: NotRequired[str]
     specific_params: NotRequired[str]
     create_date: NotRequired[datetime]
 

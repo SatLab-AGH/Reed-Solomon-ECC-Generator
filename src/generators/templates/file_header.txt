@@ -8,7 +8,6 @@
 // Dependencies: {dependencies}
 //
 // Design Specific Parameters: {specific_params}
-// Additional Comments: {additional_comments}
 ////////////////////////////////////////
 
 `timescale 1ns/1ps

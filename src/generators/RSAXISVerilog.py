@@ -14,15 +14,15 @@ logger = logging.getLogger(__name__)
 proj_path = Path(__file__).resolve().parent.parent
 
 
-class RSAXISVerilogParameters(ModuleVerilogParameters):
-    acc_params: Required[RSAccumulatorVerilogParameters]
+class RSAXISVerilogParameters(RSAccumulatorVerilogParameters):
+    pass
 
 
 class RSAXISVerilogGenerator(ModuleVerilogGenerator):
     def __init__(self, parameters: RSAXISVerilogParameters) -> None:
         self.params = parameters
         super().__init__(parameters)
-        self.acc_verilog = RSAccumulatorVerilogGenerator(self.params["acc_params"])
+        self.acc_verilog = RSAccumulatorVerilogGenerator(self.params)
         self.design_name = "RS_AXIS"
         self.description = (
             "AXI stream module, appends arbitrary RS checksum to AXI stream data after TLAST_s signal is asserted.\n"
@@ -31,7 +31,7 @@ class RSAXISVerilogGenerator(ModuleVerilogGenerator):
         self.dependencies = "RSAccumulatorVerilogGenerator, RSSegmentVerilogGenerator"
 
     def _generate_module_header(self) -> str:
-        word_size = self.params["acc_params"]["word_size"]
+        word_size = self.params["word_size"]
         interfaces = [
             (
                 ModuleInterface("aclk", "i"),
@@ -96,20 +96,11 @@ class RSAXISVerilogGenerator(ModuleVerilogGenerator):
 
 
 if __name__ == "__main__":
-    seg_params: RSSegmentVerilogParameters = {
-        "gf_degree": 10,
+    params: RSAXISVerilogParameters = {
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
         "constant_multplicants": [0],  # To populate in init
-    }
-
-    acc_params: RSAccumulatorVerilogParameters = {
         "word_size": 10,
         "n_parity_sym": 10,
-        "segment_generator_params": seg_params,
-    }
-
-    params: RSAXISVerilogParameters = {
-        "acc_params": acc_params,
     }
 
     RSAcc = RSAXISVerilogGenerator(params)

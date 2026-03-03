@@ -57,7 +57,6 @@ class FileVerilogGenerator(abc.ABC):
             description=self.description,
             dependencies=self.dependencies,
             specific_params=config.get("specific_params"),
-            additional_comments=config.get("additional_comments"),
         )
 
     def generate_to_dir(self, dir: str | Path | None = None):
