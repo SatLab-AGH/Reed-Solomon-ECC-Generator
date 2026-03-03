@@ -65,6 +65,9 @@ def get_args() -> argparse.Namespace:
 
     if args.CONFIG:
         config = load_config(args.CONFIG)
+        args.COMPANY = str(config.get("company"))
+        args.ENGINEER = str(config.get("engineer"))
+        args.PROJECT_NAME = str(config.get("project_name"))
         args.IRR_GF_POLY = int(config["irr_gf_poly"])
         args.WORD_SIZE = int(config["word_size"])
         args.ECC_LEN = int(config["ecc_len"])
@@ -91,6 +94,9 @@ def main():
     coeffs = integer_to_poly(args.IRR_GF_POLY, 2, args.WORD_SIZE)
 
     params: RSAXISVerilogParameters = {
+        "company": args.COMPANY,
+        "engineer": args.ENGINEER,
+        "project_name": args.PROJECT_NAME,
         "irreducible_poly_coeffs": np.array(coeffs),
         "word_size": args.WORD_SIZE,
         "n_parity_sym": args.ECC_LEN,

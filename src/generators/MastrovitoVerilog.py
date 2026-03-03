@@ -35,10 +35,9 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
         self.params = params
         MastrovitoMatrixGenerator.__init__(self, params)
         ModuleVerilogGenerator.__init__(self, params)
-        self._load_global_file_config()
         self.design_name = f"GF_Mastrovito_Multiplier_Adder_Deg{params['word_size']}"
         self.description = f"Zero latency, combinatorial galois field multiplier-adder (A*B+C) implemented as XOR Mastrovito matrix with predefined A."
-        self.params["specific_params"] = (
+        self.specific_params = (
             f"\n//    word_size: {self.params['word_size']}"
             f"\n//    gf irreducible_poly_coeffs: {self.params['irreducible_poly_coeffs']}"
             f"\n//    available multplicants: {self.params.get('constant_multplicants')}"

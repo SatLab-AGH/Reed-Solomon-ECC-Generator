@@ -1,0 +1,9 @@
+{
+    "company": "SatLab AGH",
+    "engineer": "Jan Rosa",
+    "project_name": "DZIDA",
+    "irr_gf_poly":"1033",
+    "word_size":10,
+    "ecc_len":20,
+    "outout_dir":"/workspace/products"
+}

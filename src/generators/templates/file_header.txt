@@ -1,9 +1,9 @@
 ////////////////////////////////////////
+// Create Date: {create_date}
 // Company: {company}
 // Engineer: {engineer}
-// Create Date: {create_date}
-// Design Name: {design_name}
 // Project Name: {project_name}
+// Design Name: {design_name}
 // Description: {description}
 // Dependencies: {dependencies}
 //

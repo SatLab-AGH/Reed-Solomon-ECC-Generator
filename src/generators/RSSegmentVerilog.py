@@ -81,7 +81,8 @@ class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
         )
 
     def _generate_module(self):
-        multiplicants = self.params["constant_multplicants"]
+        multiplicants = self.params.get("constant_multplicants")
+        assert multiplicants
         return (
             self._generate_module_header()
             + self._generate_net()

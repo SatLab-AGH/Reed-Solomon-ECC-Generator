@@ -35,7 +35,7 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
             self.segment_generator, n_parity_syms
         )
         logger.info(f"Generator polynomial: {self.segment_generator.params['constant_multplicants']}")
-        self.params["specific_params"] = (
+        self.specific_params = (
             f"\n//    Generator polynomial: {self.segment_generator.params['constant_multplicants']}"
         )
 

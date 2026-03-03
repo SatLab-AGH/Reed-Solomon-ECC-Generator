@@ -15,7 +15,6 @@ proj_path = Path(__file__).resolve().parent.parent
 class ModuleVerilogParameters(FileVerilogParameters):
     dependencies: NotRequired[str]
     specific_params: NotRequired[str]
-    create_date: NotRequired[datetime]
 
 
 @dataclass
@@ -51,7 +50,8 @@ class ModuleVerilogGenerator(FileVerilogGenerator):
     def __init__(self, params: ModuleVerilogParameters) -> None:
         super().__init__(params)
         self.params = params
-        self._load_global_file_config()
+        self.dependencies = params.get("dependencies")
+        self.specific_params = params.get("specific_params")
 
     @staticmethod
     def flatten_interfaces(
