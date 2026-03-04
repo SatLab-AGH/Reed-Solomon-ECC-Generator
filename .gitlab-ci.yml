@@ -29,10 +29,10 @@ default:
 
 sanity:
   stage: sanity
-  timeout: 1h
+  timeout: 10m
   script:
   - chmod +x ./scripts/sanity.sh
-  - ./scripts/sanity.sh | tee ./build/logs/gitlab_runner_sanity.log
+  - ./scripts/sanity.sh 2>&1 | tee ./build/logs/gitlab_runner_sanity.log
   artifacts:
     paths:
       - ./build/logs/

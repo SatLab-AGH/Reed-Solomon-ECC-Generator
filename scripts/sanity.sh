@@ -1,6 +1,4 @@
-set -e
-
-source ./.venv/bin/activate
+set -euo pipefail
 
 cd src
 
@@ -16,4 +14,3 @@ python3 -m generators.RSAXISVerilog
 echo "Generated RSAXISVerilog"
 
 cd -
-return 0
