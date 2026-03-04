@@ -16,3 +16,4 @@ python3 -m generators.RSAXISVerilog
 echo "Generated RSAXISVerilog"
 
 cd -
+return 0
