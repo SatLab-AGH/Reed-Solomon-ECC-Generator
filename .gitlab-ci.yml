@@ -32,13 +32,18 @@ sanity:
   timeout: 1h
   script:
   - chmod +x ./scripts/sanity.sh
-  - ./scripts/sanity.sh | tee ./build/logs/gitlab_runner.log
+  - ./scripts/sanity.sh | tee ./build/logs/gitlab_runner_sanity.log
+  artifacts:
+    paths:
+      - ./build/logs/
+    when: always
 
 test:
   stage: test
+  timeout: 1h
   script:
     - chmod +x ./scripts/mcore_regr.sh
-    - ./scripts/mcore_regr.sh
+    - ./scripts/mcore_regr.sh | tee ./build/logs/gitlab_runner_test.log
   artifacts:
     paths:
       - ./build/logs/
