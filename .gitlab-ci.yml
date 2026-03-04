@@ -19,7 +19,7 @@ default:
     - docker
   before_script:
     - apt-get update
-    - apt-get install -y software-properties-common
+    - apt-get install -y software-properties-common tee
     - add-apt-repository universe
     - apt-get update
     - apt-get install -y iverilog verilator curl python3-dev
@@ -29,9 +29,10 @@ default:
 
 sanity:
   stage: sanity
+  timeout: 1h
   script:
   - chmod +x ./scripts/sanity.sh
-  - ./scripts/sanity.sh
+  - ./scripts/sanity.sh | tee ./build/logs/gitlab_runner.log
 
 test:
   stage: test
