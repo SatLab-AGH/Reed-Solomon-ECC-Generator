@@ -2,15 +2,15 @@ set -euo pipefail
 
 cd src
 
-python3 -m generators.MastrovitoMatrix
+uv run python3 -m generators.MastrovitoMatrix
 echo "Generated MastrovitoMatrix"
-python3 -m generators.MastrovitoVerilog
+uv run python3 -m generators.MastrovitoVerilog
 echo "Generated MastrovitoVerilog"
-python3 -m generators.RSSegmentVerilog
+uv run python3 -m generators.RSSegmentVerilog
 echo "Generated RSSegmentVerilog"
-python3 -m generators.RSAccumulatorVerilog
+uv run python3 -m generators.RSAccumulatorVerilog
 echo "Generated RSAccumulatorVerilog"
-python3 -m generators.RSAXISVerilog
+uv run python3 -m generators.RSAXISVerilog
 echo "Generated RSAXISVerilog"
 
 cd -
