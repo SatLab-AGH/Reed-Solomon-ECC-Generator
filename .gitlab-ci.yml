@@ -31,6 +31,7 @@ sanity:
   stage: sanity
   timeout: 10m
   script:
+  - mkdir -p ./build/logs/
   - chmod +x ./scripts/sanity.sh
   - ./scripts/sanity.sh > ./build/logs/gitlab_runner_sanity.log 2>&1
   artifacts:
@@ -42,6 +43,7 @@ test:
   stage: test
   timeout: 1h
   script:
+    - mkdir -p ./build/logs/
     - chmod +x ./scripts/mcore_regr.sh
     - ./scripts/mcore_regr.sh > ./build/logs/gitlab_runner_test.log 2>&1
   artifacts:
