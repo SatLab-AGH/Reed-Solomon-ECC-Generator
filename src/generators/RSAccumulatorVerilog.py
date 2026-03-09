@@ -1,6 +1,4 @@
-import copy
 import logging
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Required
 
@@ -8,7 +6,7 @@ import numpy as np
 import reedsolo as rs
 
 from generators.MastrovitoMatrix import MastrovitoMatrixGenerator
-from generators.ModuleVerilog import ModuleInterface, ModuleVerilogGenerator, ModuleVerilogParameters
+from generators.ModuleVerilog import ModuleInterface, ModuleVerilogGenerator
 from generators.RSSegmentVerilog import RSSegmentVerilogGenerator, RSSegmentVerilogParameters
 
 logger = logging.getLogger(__name__)
@@ -48,7 +46,6 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
     def _generate_module_header(self) -> str:
         logger.info("Generating module header")
         word_size = self.params["word_size"]
-        n_parity = self.params["n_parity_sym"]
 
         # 1. Define the port interfaces
         interfaces = [
@@ -80,7 +77,6 @@ class RSAccumulatorVerilogGenerator(ModuleVerilogGenerator):
         return "\n" + "endmodule\n"
 
     def _generate_module_body(self):
-        word_size = self.params["word_size"]
         module_body: str = ""
         gen_coefs = self.params.get("constant_multplicants")
         assert gen_coefs

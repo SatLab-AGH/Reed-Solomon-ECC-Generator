@@ -1,13 +1,12 @@
-from copy import copy, deepcopy
 import logging
-import pathlib
-from logging.handlers import RotatingFileHandler
+from copy import deepcopy
 from pathlib import Path
-from typing import NotRequired, Required
+from typing import NotRequired
 
 import numpy as np
 from numpy.typing import NDArray
 
+from generators.logging_config import setup_logging
 from generators.MastrovitoMatrix import MastrovitoMatrixGenerator, MastrovitoMatrixParameters
 from generators.ModuleVerilog import (
     ModuleInterface,
@@ -15,7 +14,6 @@ from generators.ModuleVerilog import (
     ModuleVerilogGenerator,
     ModuleVerilogParameters,
 )
-from generators.logging_config import setup_logging
 
 logger = logging.getLogger(__name__)
 proj_path = Path(__file__).resolve().parent.parent
@@ -36,7 +34,9 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
         MastrovitoMatrixGenerator.__init__(self, params)
         ModuleVerilogGenerator.__init__(self, params)
         self.design_name = f"GF_Mastrovito_Multiplier_Adder_Deg{params['word_size']}"
-        self.description = f"Zero latency, combinatorial galois field multiplier-adder (A*B+C) implemented as XOR Mastrovito matrix with predefined A."
+        self.description = "Zero latency, combinatorial galois field multiplier-adder (A*B+C) implemented as "
+        "XOR Mastrovito matrix with predefined A."
+
         self.specific_params = (
             f"\n//    word_size: {self.params['word_size']}"
             f"\n//    gf irreducible_poly_coeffs: {self.params['irreducible_poly_coeffs']}"
@@ -182,7 +182,7 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
 
 
 if __name__ == "__main__":
-    setup_logging(f"MastrovitoVerilog/default.log")
+    setup_logging("MastrovitoVerilog/default.log")
     params: MastrovitoVerilogParameters = {
         "word_size": 10,
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),

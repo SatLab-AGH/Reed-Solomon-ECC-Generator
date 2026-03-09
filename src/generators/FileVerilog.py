@@ -1,6 +1,4 @@
 import abc
-from dataclasses import dataclass
-import json
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -36,9 +34,8 @@ class FileVerilogGenerator(abc.ABC):
 
     # File
     def _get_file_header_template(self) -> str:
-        with open(self.template_path / "file_header.txt", "r", encoding="utf-8") as f:
-            template = f.read()
-        return template
+        with Path.open(self.template_path / "file_header.txt", "r", encoding="utf-8") as f:
+            return f.read()
 
     def _generate_file_header(self) -> str:
         template = self._get_file_header_template()

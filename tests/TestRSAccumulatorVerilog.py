@@ -14,9 +14,8 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, Timer
 from cocotb_tools.runner import get_runner
 
-from generators.RSAccumulatorVerilog import RSAccumulatorVerilogGenerator, RSAccumulatorVerilogParameters
-from generators.RSSegmentVerilog import RSSegmentVerilogParameters
 from generators.logging_config import setup_logging
+from generators.RSAccumulatorVerilog import RSAccumulatorVerilogGenerator, RSAccumulatorVerilogParameters
 
 logger = logging.getLogger("cocotb.segment")
 
@@ -156,5 +155,5 @@ def test_runner(ecc_len):
     runner.test(
         hdl_toplevel="RS_Accumulator",
         test_module="tests.TestRSAccumulatorVerilog",
-        plusargs=[f"+ECC_LEN={ecc_len}", f"+GF_DEGREE ={str(acc_params['word_size'])}"],
+        plusargs=[f"+ECC_LEN={ecc_len}", f"+GF_DEGREE ={acc_params['word_size']!s}"],
     )

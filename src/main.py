@@ -1,8 +1,9 @@
 import argparse
 import json
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
+
 import galois
 import numpy as np
 
@@ -46,7 +47,7 @@ def load_config(path: Path):
         raise ValueError(f"Config path is not a file: {path}")
 
     try:
-        with open(path, "r") as f:
+        with Path.open(path, "r") as f:
             config = json.load(f)
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON in config file: {e}")
@@ -87,9 +88,8 @@ def get_args() -> argparse.Namespace:
 
 def main():
     args = get_args()
-    os.makedirs(proj_path / "products/", exist_ok=True) if args.OUTPUT_DIR is None else os.makedirs(
-        args.OUTPUT_DIR, exist_ok=True
-    )
+    Path(proj_path / "products/").mkdir(exist_ok=True, parents=True) if args.OUTPUT_DIR is None \
+        else Path(args.OUTPUT_DIR).mkdir(exist_ok=True, parents=True)
 
     coeffs = integer_to_poly(args.IRR_GF_POLY, 2, args.WORD_SIZE)
 
@@ -114,7 +114,7 @@ def main():
     ]
 
     for filepath in build_filepaths:
-        shutil.move(filepath, dst=args.OUTPUT_DIR / os.path.basename(filepath))
+        shutil.move(filepath, dst=args.OUTPUT_DIR / Path(filepath).name)
 
 
 if __name__ == "__main__":

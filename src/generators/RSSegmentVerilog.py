@@ -1,13 +1,11 @@
 import logging
-from logging.handlers import RotatingFileHandler
-from pathlib import Path
-from typing import NotRequired, Required, override
+from typing import override
 
 import numpy as np
 
+from generators.logging_config import setup_logging
 from generators.MastrovitoVerilog import MastrovitoVerilogGenerator, MastrovitoVerilogParameters
 from generators.ModuleVerilog import ModuleInterface, ModuleParameter
-from generators.logging_config import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +18,8 @@ class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
     def __init__(self, params: RSSegmentVerilogParameters):
         super().__init__(params)
         self.description = (
-            f"One cycle latency galois field multiplier-adder (A*B+C) implemented as XOR Mastrovito matrix with predefined A.\n"
+            "One cycle latency galois field multiplier-adder (A*B+C) implemented "
+            "as XOR Mastrovito matrix with predefined A.\n"
             "//\t\t\tImplemented Backward bypass for Reed-Solomon encoder implementation."
         )
         self.design_name = "RS_Segment"
@@ -39,7 +38,7 @@ class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
         return "\n" + f"assign PS = GF2_Deg{degree}_add(P, RS_Forward_I);\n" + "\n"
 
     def _generate_module_header(self) -> str:
-        parameters = [ModuleParameter(str("GF_CONST_MULT"), None, 1)]
+        parameters = [ModuleParameter("GF_CONST_MULT", None, 1)]
         interfaces = [
             (
                 ModuleInterface("clk", "i"),
@@ -94,7 +93,7 @@ class RSSegmentVerilogGenerator(MastrovitoVerilogGenerator):
 
 
 if __name__ == "__main__":
-    setup_logging(f"RS_Segment/default.log")
+    setup_logging("RS_Segment/default.log")
     params: RSSegmentVerilogParameters = {
         "word_size": 10,
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),

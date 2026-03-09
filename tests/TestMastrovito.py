@@ -1,12 +1,12 @@
 import logging
-from pathlib import Path
 import random
+from pathlib import Path
 
 import galois
 import pytest
 
-from generators.MastrovitoMatrix import MastrovitoMatrixGenerator, MastrovitoMatrixParameters
 from generators.logging_config import setup_logging
+from generators.MastrovitoMatrix import MastrovitoMatrixGenerator, MastrovitoMatrixParameters
 
 logger = logging.getLogger(__name__)
 

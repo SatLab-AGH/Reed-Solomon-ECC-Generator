@@ -1,14 +1,10 @@
 import logging
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Required
 
 import numpy as np
 
-from generators.ModuleVerilog import ModuleInterface, ModuleVerilogGenerator, ModuleVerilogParameters
+from generators.ModuleVerilog import ModuleInterface, ModuleVerilogGenerator
 from generators.RSAccumulatorVerilog import RSAccumulatorVerilogGenerator, RSAccumulatorVerilogParameters
-from generators.RSSegmentVerilog import RSSegmentVerilogParameters
-
 
 logger = logging.getLogger(__name__)
 proj_path = Path(__file__).resolve().parent.parent
@@ -25,8 +21,10 @@ class RSAXISVerilogGenerator(ModuleVerilogGenerator):
         self.acc_verilog = RSAccumulatorVerilogGenerator(self.params)
         self.design_name = "RS_AXIS"
         self.description = (
-            "AXI stream module, appends arbitrary RS checksum to AXI stream data after TLAST_s signal is asserted.\n"
-            "//\t\t\t AXI stream data length control for RS utilization is user duty, checksum length is fixed."
+            "AXI stream module, appends arbitrary RS checksum to "
+            "AXI stream data after TLAST_s signal is asserted.\n"
+            "//\t\t\t AXI stream data length control for "
+            "RS utilization is user duty, checksum length is fixed."
         )
         self.dependencies = "RSAccumulatorVerilogGenerator, RSSegmentVerilogGenerator"
 
@@ -68,9 +66,8 @@ class RSAXISVerilogGenerator(ModuleVerilogGenerator):
 
     def _get_feedback_control_template(self):
         path = self.proj_path / "src/generators/templates/rs_axis.txt"
-        with open(path, "r") as f:
-            template = f.read()
-        return template
+        with Path.open(path, "r") as f:
+            return f.read()
 
     def _generate_feedback_control(self) -> str:
         template = self._get_feedback_control_template()
@@ -82,7 +79,7 @@ class RSAXISVerilogGenerator(ModuleVerilogGenerator):
     def _generate_module_body(self) -> str:
         return self._generate_feedback_control() + self._generate_accumulator_instance()
 
-    def _generate_module(self, *args, **kwargs) -> str:
+    def _generate_module(self, *args, **kwargs) -> str:  # noqa: ARG002
         return self._generate_module_header() + self._generate_module_body() + self._generate_module_foot()
 
     def generate_all_files(

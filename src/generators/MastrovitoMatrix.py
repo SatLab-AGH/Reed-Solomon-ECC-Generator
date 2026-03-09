@@ -1,12 +1,9 @@
 import logging
-from logging.handlers import RotatingFileHandler
-from pathlib import Path
 from typing import Required, TypedDict
 
 import galois
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-import abc
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +13,7 @@ class MastrovitoMatrixParameters(TypedDict):
     irreducible_poly_coeffs: Required[np.ndarray]
 
 
-class MastrovitoMatrixGenerator(abc.ABC):
+class MastrovitoMatrixGenerator:
     """
     Calculates Mastrovito matrix to perform GF multiplication using only parralel XOR gates
     https://www.iiis.org/cds2010/cd2010imc/ccct_2010/paperspdf/ta999ne.pdf

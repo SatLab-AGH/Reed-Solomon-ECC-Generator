@@ -1,10 +1,9 @@
 import abc
-from dataclasses import dataclass
-import json
 import logging
-from datetime import datetime
+from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, NotRequired, Required, Sequence, TypedDict
+from typing import Literal, NotRequired
 
 from generators.FileVerilog import FileVerilogGenerator, FileVerilogParameters
 

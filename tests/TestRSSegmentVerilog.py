@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import os
 import random
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 import cocotb
@@ -13,8 +12,8 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, Timer
 from cocotb_tools.runner import get_runner
 
-from generators.RSSegmentVerilog import RSSegmentVerilogGenerator, RSSegmentVerilogParameters
 from generators.logging_config import setup_logging
+from generators.RSSegmentVerilog import RSSegmentVerilogGenerator, RSSegmentVerilogParameters
 
 logger = logging.getLogger("cocotb.segment")
 

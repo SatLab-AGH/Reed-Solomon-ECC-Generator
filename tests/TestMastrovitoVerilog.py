@@ -1,5 +1,3 @@
-# This file is public domain, it can be freely copied without restrictions.
-# SPDX-License-Identifier: CC0-1.0
 from __future__ import annotations
 
 import logging
@@ -14,8 +12,8 @@ import pytest
 from cocotb.triggers import Timer
 from cocotb_tools.runner import get_runner
 
-from generators.MastrovitoVerilog import MastrovitoVerilogGenerator, MastrovitoVerilogParameters
 from generators.logging_config import setup_logging
+from generators.MastrovitoVerilog import MastrovitoVerilogGenerator, MastrovitoVerilogParameters
 
 logger = logging.getLogger(__name__)
 

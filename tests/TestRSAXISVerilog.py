@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-from enum import Enum
 import logging
 import os
 import random
-from dataclasses import dataclass
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 import cocotb
@@ -13,23 +10,14 @@ import numpy as np
 import pytest
 import reedsolo as rs
 from cocotb.clock import Clock
-from cocotb.triggers import Event, RisingEdge, Timer
+from cocotb.triggers import RisingEdge, Timer, with_timeout
 from cocotb_tools.runner import get_runner
-from cocotbext.axi import AxiStreamBus, AxiStreamFrame, AxiStreamSource, AxiStreamSink, AxiStreamMonitor
+from cocotbext.axi import AxiStreamBus, AxiStreamFrame, AxiStreamSink, AxiStreamSource
 
-from generators.RSAXISVerilog import RSAXISVerilogGenerator, RSAXISVerilogParameters
-from generators.RSAccumulatorVerilog import RSAccumulatorVerilogParameters
-from generators.RSSegmentVerilog import RSSegmentVerilogParameters
 from generators.logging_config import setup_logging
+from generators.RSAXISVerilog import RSAXISVerilogGenerator, RSAXISVerilogParameters
 
 logger = logging.getLogger("cocotb.rs_axis")
-
-import cocotb
-import random
-from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, Timer, with_timeout
-from cocotbext.axi import AxiStreamBus, AxiStreamSource, AxiStreamSink, AxiStreamFrame
-
 
 FRAME_COUNT = 25
 MAX_FRAME_LEN = 32
@@ -59,7 +47,7 @@ async def random_backpressure(dut):
 
 def check_data(tx_frame: AxiStreamFrame, rx_frame: AxiStreamFrame):
     assert tx_frame.tdata == rx_frame.tdata[: len(tx_frame.tdata)], (
-        f"Payload data mismatch\n",
+        "Payload data mismatch\n",
         f"TX={tx_frame.tdata}\nRX={rx_frame.tdata[: len(tx_frame.tdata)]}",
     )
     ecc_len = int(cocotb.plusargs.get("ECC_LEN", "inf"))
@@ -69,7 +57,7 @@ def check_data(tx_frame: AxiStreamFrame, rx_frame: AxiStreamFrame):
     reference_ecc_frame = rsc.encode(tx_frame.tdata)
     assert len(reference_ecc_frame) == len(rx_frame.tdata)
     assert list(reference_ecc_frame) == rx_frame.tdata, (
-        f"Payload frame mismatch\n",
+        "Payload frame mismatch\n",
         f"TX={reference_ecc_frame}\nRX={rx_frame.tdata}",
     )
 
@@ -127,15 +115,15 @@ def test_runner(ecc_len):
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
     }
 
-    _generator = RSAXISVerilogGenerator(axis_params)
+    generator = RSAXISVerilogGenerator(axis_params) 
 
     rtl_axis_dir = f"RS_AXIS/{ecc_len}"
     rtl_acc_path = f"RS_AXIS/{ecc_len}"
     rtl_seg_path = f"RS_AXIS/{ecc_len}"
 
-    _generator.params["n_parity_sym"] = ecc_len
-    _generator.acc_verilog.set_generator_poly_len(ecc_len)
-    _generator.generate_all_files(rtl_seg_path, rtl_acc_path, rtl_axis_dir)
+    generator.params["n_parity_sym"] = ecc_len
+    generator.acc_verilog.set_generator_poly_len(ecc_len)
+    generator.generate_all_files(rtl_seg_path, rtl_acc_path, rtl_axis_dir)
 
     sim = os.getenv("SIM", "icarus")
 
@@ -162,7 +150,7 @@ def test_runner(ecc_len):
         test_module="tests.TestRSAXISVerilog",
         plusargs=[
             f"+ECC_LEN={ecc_len}",
-            f"+WORD_SIZE={str(axis_params['word_size'])}",
-            f"+GF_PRIM={str(_generator.acc_verilog.segment_generator.irreducible_poly._integer)}",
+            f"+WORD_SIZE={axis_params['word_size']!s}",
+            f"+GF_PRIM={generator.acc_verilog.segment_generator.irreducible_poly._integer!s}",
         ],
     )
