@@ -1,10 +1,9 @@
 import abc
-from dataclasses import dataclass
-import json
 import logging
-from datetime import datetime
+from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, NotRequired, Required, Sequence, TypedDict
+from typing import Literal, NotRequired
 
 from generators.FileVerilog import FileVerilogGenerator, FileVerilogParameters
 
@@ -13,12 +12,8 @@ proj_path = Path(__file__).resolve().parent.parent
 
 
 class ModuleVerilogParameters(FileVerilogParameters):
-    design_name: Required[str]
-    description: NotRequired[str]
     dependencies: NotRequired[str]
-    additional_comments: NotRequired[str]
     specific_params: NotRequired[str]
-    create_date: NotRequired[datetime]
 
 
 @dataclass
@@ -54,7 +49,8 @@ class ModuleVerilogGenerator(FileVerilogGenerator):
     def __init__(self, params: ModuleVerilogParameters) -> None:
         super().__init__(params)
         self.params = params
-        self._load_global_file_config()
+        self.dependencies = params.get("dependencies")
+        self.specific_params = params.get("specific_params")
 
     @staticmethod
     def flatten_interfaces(
@@ -76,7 +72,7 @@ class ModuleVerilogGenerator(FileVerilogGenerator):
         self.verilog_interfaces = interfaces
         self.verilog_parameters = parameters
 
-        m_head = [f"module {self.params['design_name']}"]
+        m_head = [f"module {self.design_name}"]
 
         # ---------- parameters ----------
         if parameters:
@@ -116,7 +112,7 @@ class ModuleVerilogGenerator(FileVerilogGenerator):
         parameters = self.verilog_parameters
         interfaces = self.verilog_interfaces
 
-        m_head = [f"{self.params['design_name']}"]
+        m_head = [f"{self.design_name}"]
 
         # ---------- parameters ----------
         if parameters:
@@ -126,7 +122,7 @@ class ModuleVerilogGenerator(FileVerilogGenerator):
                 m_head.append(f"\t.{parameter.name}({{{parameter.name}}}){comma}")
             m_head.append(")")
 
-        m_head.append(f"{self.params['design_name']}_{{instance_name}}_impl")
+        m_head.append(f"{self.design_name}_{{instance_name}}_impl")
         m_head.append("(")
 
         # ---------- interfaces ----------

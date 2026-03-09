@@ -1,75 +1,73 @@
 import logging
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Required
 
 import numpy as np
 
-from generators.ModuleVerilog import ModuleInterface, ModuleVerilogGenerator, ModuleVerilogParameters
+from generators.ModuleVerilog import ModuleInterface, ModuleVerilogGenerator
 from generators.RSAccumulatorVerilog import RSAccumulatorVerilogGenerator, RSAccumulatorVerilogParameters
-from generators.RSSegmentVerilog import RSSegmentVerilogParameters
-
 
 logger = logging.getLogger(__name__)
 proj_path = Path(__file__).resolve().parent.parent
 
 
-class RSAXISVerilogParameters(ModuleVerilogParameters):
-    acc_params: Required[RSAccumulatorVerilogParameters]
+class RSAXISVerilogParameters(RSAccumulatorVerilogParameters):
+    pass
 
 
 class RSAXISVerilogGenerator(ModuleVerilogGenerator):
     def __init__(self, parameters: RSAXISVerilogParameters) -> None:
         self.params = parameters
         super().__init__(parameters)
-        self.acc_verilog = RSAccumulatorVerilogGenerator(self.params["acc_params"])
+        self.acc_verilog = RSAccumulatorVerilogGenerator(self.params)
+        self.design_name = "RS_AXIS"
         self.description = (
-            "AXI stream module, appends arbitrary RS checksum to AXI stream data after TLAST_s signal is asserted.\n"
-            "//\t\t\t AXI stream data length control for RS utilization is user duty, checksum length is fixed."
+            "AXI stream module, appends arbitrary RS checksum to "
+            "AXI stream data after TLAST_s signal is asserted.\n"
+            "//\t\t\t AXI stream data length control for "
+            "RS utilization is user duty, checksum length is fixed."
         )
         self.dependencies = "RSAccumulatorVerilogGenerator, RSSegmentVerilogGenerator"
 
     def _generate_module_header(self) -> str:
-        word_size = self.params["acc_params"]["word_size"]
+        word_size = self.params["word_size"]
         interfaces = [
             (
-                ModuleInterface("ACLK", "i"),
-                ModuleInterface("ARESETn", "i"),
+                ModuleInterface("aclk", "i"),
+                ModuleInterface("areset_n", "i"),
             ),
             (
-                ModuleInterface("TVALID_m", "o"),
-                ModuleInterface("TREADY_m", "i"),
-                ModuleInterface("TDATA_m", "o", word_size),
-                ModuleInterface("TLAST_m", "o"),
+                ModuleInterface("axis_m_tvalid", "o"),
+                ModuleInterface("axis_m_tready", "i"),
+                ModuleInterface("axis_m_tdata", "o", word_size),
+                ModuleInterface("axis_m_tlast", "o"),
             ),
             (
-                ModuleInterface("TVALID_s", "i"),
-                ModuleInterface("TREADY_s", "o"),
-                ModuleInterface("TDATA_s", "i", word_size),
-                ModuleInterface("TLAST_s", "i"),
+                ModuleInterface("axis_s_tvalid", "i"),
+                ModuleInterface("axis_s_tready", "o"),
+                ModuleInterface("axis_s_tdata", "i", word_size),
+                ModuleInterface("axis_s_tlast", "i"),
             ),
         ]
         return self.generic_generate_module_header(interfaces)
 
     def _generate_module_foot(self) -> str:
-        return f"\nendmodule // {self.params['design_name']}\n"
+        return f"\nendmodule // {self.design_name}\n"
 
     def _generate_accumulator_instance(self) -> str:
         template = self.acc_verilog.generic_generate_module_instance_template()
         return template.format(
             instance_name="",
-            clk="ACLK",
-            rst_n="ARESETn",
-            acc_input="TDATA_s",
+            clk="aclk",
+            rst_n="areset_n",
+            acc_input="axis_s_tdata",
             acc_output="acc_output",
-            feedback="(!feedback_control_reg & TVALID_s)",
+            feedback="(!feedback_control_reg & axis_s_tvalid)",
         )
 
     def _get_feedback_control_template(self):
         path = self.proj_path / "src/generators/templates/rs_axis.txt"
-        with open(path, "r") as f:
-            template = f.read()
-        return template
+        with Path.open(path, "r") as f:
+            return f.read()
 
     def _generate_feedback_control(self) -> str:
         template = self._get_feedback_control_template()
@@ -81,40 +79,27 @@ class RSAXISVerilogGenerator(ModuleVerilogGenerator):
     def _generate_module_body(self) -> str:
         return self._generate_feedback_control() + self._generate_accumulator_instance()
 
-    def _generate_module(self, *args, **kwargs) -> str:
+    def _generate_module(self, *args, **kwargs) -> str:  # noqa: ARG002
         return self._generate_module_header() + self._generate_module_body() + self._generate_module_foot()
 
     def generate_all_files(
-        self, segment_path: Path | str, acc_filepath: Path | str, axis_filepath: Path | str
+        self,
+        segment_path: Path | str | None = None,
+        acc_filepath: Path | str | None = None,
+        axis_filepath: Path | str | None = None,
     ):
-        self.acc_verilog.generate_all_files(segment_path, acc_filepath)
-        self.generate_to_file(axis_filepath)
+        self.acc_verilog.generate_all_to_dir(segment_path, acc_filepath)
+        self.generate_to_dir(axis_filepath)
 
 
 if __name__ == "__main__":
-    seg_params: RSSegmentVerilogParameters = {
-        "design_name": "RS_Segment",
-        "description": "Zero latency backward and one latency forwards building block "
-        + "of RS encoder accumulator type",
-        "gf_degree": 10,
+    params: RSAXISVerilogParameters = {
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
         "constant_multplicants": [0],  # To populate in init
-    }
-
-    acc_params: RSAccumulatorVerilogParameters = {
-        "design_name": "RS_Accumulator",
-        "description": "",
         "word_size": 10,
         "n_parity_sym": 10,
-        "segment_generator_params": seg_params,
-    }
-
-    params: RSAXISVerilogParameters = {
-        "design_name": "RS_AXIS",
-        "description": "",
-        "acc_params": acc_params,
     }
 
     RSAcc = RSAXISVerilogGenerator(params)
 
-    RSAcc.generate_all_files("RS_Segment.v", "RS_Accumulator.v", "RS_AXIS.v")
+    RSAcc.generate_all_files()
