@@ -27,17 +27,18 @@ The **Reed-Solomon-Generator** repository provides a Python-based toolchain that
 
 | Block | Source file | Description |
 |-------|-------------|-------------|
+| **RS Segment Generator** | `src/generators/RSSegmentVerilog.py` | Generates the per-segment multiplier logic used by the accumulator. |
 | **RS Accumulator** | `src/generators/RSAccumulatorVerilog.py` | Implements the core Reed-Solomon accumulator (parity calculation). |
 | **RS AXI-Stream ECC Generator** | `src/generators/RSAXISVerilog.py` | Wraps the accumulator with an AXI-Stream front-end for easy integration in FPGA designs. |
-| **RS Segment Generator** | `src/generators/RSSegmentVerilog.py` | Generates the per-segment multiplier logic used by the accumulator. |
 
-The generated Verilog can be dropped into an FPGA project and connected to other IP blocks via the provided AXI-Stream interface.
+The generated Verilog can be dropped into an any RTL project and connected to other IP blocks via the provided AXI-Stream interface.
 
 ---  
 
-## Prerequisites  
+## Prerequisites
 
-Defined in dockerfile
+This project is developed in Devcontainer Docker environment other ways are probably possible but not supported.
+Defined in [Dockerfile](Dockerfile) and in [PyProject.toml](pyproject.toml)
 
 ---  
 
@@ -46,19 +47,26 @@ Defined in dockerfile
 1. **Clone the repository**  
 
    ```bash
-   git clone https://gitlab.satlab.agh.edu.pl/satlab/fpga_payload/reed-solomon-generator.git
+   git clone git@github.com:SatLab-AGH/Reed-Solomon-ECC-Generator.git
    cd reed-solomon-generator
    ```
 
-2. **Create a Python environment with `uv`**  
+2. **Open the devcontainer**  
+
+   If you use VSCode with Remote-Containers, the configuration lives in `.devcontainer/devcontainer.json`. Opening the folder in VSCode will automatically spin up a Docker container with all extensions listed (Python, C/C++, Verilog, Ruff, etc.).
+
+
+3. **Sync Python environment with `uv`**  
 
    ```bash
-   uv sync   # installs dependencies from pyproject.toml
+   uv sync --active  # installs dependencies from pyproject.toml
    ```
 
-3. **(Optional) Open the devcontainer**  
+4. **(For contributors) Install pre-commit**  
 
-   If you use VS\UffffffffCode with Remote-Containers, the configuration lives in `.devcontainer/devcontainer.json`. Opening the folder in VS\UffffffffCode will automatically spin up a Docker container with all extensions listed (Python, C/C++, Verilog, Ruff, etc.).
+   ```bash
+   pre-commit install
+   ```
 
 ---  
 
@@ -66,16 +74,20 @@ Defined in dockerfile
 
 Below is a minimal example command that generates a complete Verilog module for a Reed-Solomon encoder with 10-bit symbols and 16 parity symbols.
 
-/workspace/.venv/bin/python /workspace/src/main.py --WORD_SIZE 10 --ECC_LEN 16 --OUTPUT_DIR output 
+   ```bash
+   /workspace/.venv/bin/python /workspace/src/main.py --WORD_SIZE 10 --ECC_LEN 16 --OUTPUT_DIR output 
+   ```
+
+---
 
 ## Generating Verilog  
 
 The core generation flow is:
 
-1. **Mastrovito matrix** \Uffffffff `MastrovitoMatrix` creates the multiplication matrix needed for GF(2^m) operations.  
-1. **Segment multiplier** \Uffffffff `RSSegmentVerilog` uses the matrix and the list of constant multiplicants to emit per-segment Verilog.  
-1. **Accumulator** \Uffffffff `RSAccumulatorVerilog` wires the segment modules together and adds the parity-generation logic.  
-1. **AXI-Stream wrapper** \Uffffffff `RSAXISVerilog` adds the AXI-Stream interface and feedback control.
+1. **Mastrovito matrix**  `MastrovitoMatrix` creates the multiplication matrix needed for GF(2^m) operations.  
+1. **Segment multiplier**  `RSSegmentVerilog` uses the matrix and the list of constant multiplicants to emit per-segment Verilog.  
+1. **Accumulator**  `RSAccumulatorVerilog` wires the segment modules together and adds the parity-generation logic.  
+1. **AXI-Stream wrapper**  `RSAXISVerilog` adds the AXI-Stream interface and feedback control.
 
 ---  
 
@@ -87,18 +99,6 @@ The repository ships with a pytest-compatible test suite under `tests/`.
 . ./scripts/mcore_regr.sh
 ```
 
-Key test files:
-
-| Test | What it validates |
-|------|-------------------|
-| `tests/TestMastrovito.py` | Correctness of the Mastrovito matrix generation. |
-| `tests/TestMastrovitoVerilog.py` | Verilog output for the Mastrovito module. |
-| `tests/TestRSAccumulatorVerilog.py` | ECC generation matches `reedsolo.RSCodec`. |
-| `tests/TestRSAXISVerilog.py` | End-to-end AXI-Stream ECC verification. |
-| `tests/TestRSSegmentVerilog.py` | Stimulus driver for the segment multiplier. |
-
-> **Note:** The tests rely on the `reedsolo` Python package and a Verilog simulator (e.g., cocotb). Make sure those are installed and reachable from your environment.
-
 ---  
 
 ## Contributing  
@@ -107,21 +107,30 @@ Key test files:
 2. **Run the pre-commit hooks** before committing:  
 
    ```bash
-   pre-commit install
    pre-commit run --all-files
    ```
 
 3. **Write tests** for any new functionality.  
-4. **Submit a Merge Request** via GitLab.  
+4. **Submit a Merge Request** via GitHub.  
 
-The CI pipeline defined in `.gitlab-ci.yml` will automatically lint (Ruff), type-check, and run the test suite on every push.
+> **Note:** Main work is done on [SatLab AGH](https://satlab.agh.edu.pl/) internal repository, any features and bugs will be worked on there and then merged to main mirrored to GitHub for the time project is developed for [SatLab AGH](https://satlab.agh.edu.pl/).
 
 ---  
 
 ## License & Acknowledgements  
 
-*License information goes here (e.g., MIT, Apache-2.0, etc.).*  
+This repository is shared via [MIT License](LICENSE.md).
 
-*Acknowledgements for any third-party libraries (e.g., `reedsolo`, `cocotb`, `uv`, Ollama models) can be added here.*  
+This code is developed for [DZIDA](https://satlab.agh.edu.pl/puchacz.html) Laser Communication Project for a PUCHACZ Sattelite mission.
 
+Jan Rosa is developer contributing to Reed-Solomon Encoder Module.
+
+Mateusz Maź is developer contributing to Reed-Solomon Decoder Module.
+
+Huge thanks people contributing to:
++ [reedsolo](https://github.com/tomerfiliba-org/reedsolomon)
++ [cocotb](https://github.com/cocotb/cocotb)
++ [cocotbext-axi](https://github.com/alexforencich/cocotbext-axi)
++ [verilator](https://github.com/verilator/verilator)
++ [Icarus Verilog](https://github.com/steveicarus/iverilog)
 ---  
