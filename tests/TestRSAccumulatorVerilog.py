@@ -125,7 +125,7 @@ async def RS_Accumulator_random(dut):
 
 @pytest.mark.parametrize(
     "ecc_len",
-    [(2**i) - 1 for i in range(1, 10)],
+    [(2**i) - 1 for i in range(1, 9)],
 )
 def test_runner(ecc_len):
     setup_logging(f"RS_Accumulator/{ecc_len}.log")

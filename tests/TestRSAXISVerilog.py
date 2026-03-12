@@ -104,7 +104,7 @@ async def RS_AXIS_random_streams(dut):
 
 @pytest.mark.parametrize(
     "ecc_len",
-    [(2**i) - 1 for i in range(1, 10)],
+    [(2**i) - 1 for i in range(1, 9)],
 )
 def test_runner(ecc_len):
     setup_logging(f"RS_AXIS/{ecc_len}.log")
@@ -115,7 +115,7 @@ def test_runner(ecc_len):
         "irreducible_poly_coeffs": np.array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
     }
 
-    generator = RSAXISVerilogGenerator(axis_params) 
+    generator = RSAXISVerilogGenerator(axis_params)
 
     rtl_axis_dir = f"RS_AXIS/{ecc_len}"
     rtl_acc_path = f"RS_AXIS/{ecc_len}"

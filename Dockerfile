@@ -29,4 +29,8 @@ COPY pyproject.toml uv.lock* requirements*.txt* ./
 # Install Python deps if present
 RUN if [ -f pyproject.toml ]; then uv sync --active; fi
 
+COPY scripts/ ./scripts/
+
+RUN chmod +x scripts/verilator_init.sh && bash scripts/verilator_init.sh
+
 CMD ["/bin/bash"]
