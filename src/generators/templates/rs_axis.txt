@@ -1,10 +1,13 @@
 wire [{word_size}-1:0] acc_output;
+/* n_parity_sym_nr can be 1 bit */
+/* verilator lint_off ASCRANGE */
 reg [$clog2({n_parity_max})-1:0] n_parity_sym_nr = 0;
+/* verilator lint_on ASCRANGE */
 reg feedback_control_reg = 0;
 
 always @(posedge aclk) begin : feedback_control
-    casex({{feedback_control_reg, axis_s_tlast, areset_n}})
-        3'bx11: begin
+    casez({{feedback_control_reg, axis_s_tlast, areset_n}})
+        3'b?11: begin
             feedback_control_reg <= 1'b1;
             n_parity_sym_nr <= {n_parity_max};
         end
@@ -23,7 +26,7 @@ always @(posedge aclk) begin : feedback_control
 end // always
 
 assign axis_s_tready = !feedback_control_reg;
-assign axis_m_tvalid = n_parity_sym_nr ? 1'b1 : (axis_s_tvalid && ~feedback_control_reg);
+assign axis_m_tvalid = |n_parity_sym_nr ? 1'b1 : (axis_s_tvalid && ~feedback_control_reg);
 assign axis_m_tdata = feedback_control_reg ? acc_output : axis_s_tdata;
 assign axis_m_tlast = n_parity_sym_nr==1; //last parity word
 

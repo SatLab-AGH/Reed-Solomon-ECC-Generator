@@ -160,7 +160,9 @@ class MastrovitoVerilogGenerator(MastrovitoMatrixGenerator, ModuleVerilogGenerat
             outstring += self._generate_mult_if(multiplicant, self.word_size)
         outstring += (
             "begin \t\t\t\t\t: generate_block_mult_INVALID\n"
-            + '    $fatal("Not generated Constant Multiplicant Selected: %d.", GF_CONST_MULT);\n'
+            + "/* verilator lint_off USERERROR */"
+            + '    $error("Not generated Constant Multiplicant Selected: %d.", GF_CONST_MULT);\n'
+            + "/* verilator lint_on USERERROR */"
             + "end\n\n"
         )
 
