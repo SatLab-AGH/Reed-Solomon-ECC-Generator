@@ -1,7 +1,6 @@
-from asyncio import Queue
 import asyncio
 import random
-from typing import Sequence
+from collections.abc import Sequence
 
 
 class BERInject:
