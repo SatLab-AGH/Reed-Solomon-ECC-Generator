@@ -1,0 +1,8 @@
+[
+  {
+    "name": "nexus_511",
+    "target": "nexus",
+    "ecc_len": [11],
+    "word_size": [10]
+  }
+]
