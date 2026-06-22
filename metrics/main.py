@@ -1,17 +1,16 @@
 import argparse
-from asyncio import Queue
 import asyncio
-from concurrent.futures import ProcessPoolExecutor
 import logging
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 from pathlib import Path
 
 import numpy as np
+from BERInject import BERInject
+from RSApply import RSApply
 from RSDataGen import RSDataGen
 from RSEval import RSEval
-from RSApply import RSApply
-from BERInject import BERInject
 from Visualizer import BERCurve
-from functools import partial
 
 logger = logging.getLogger(__name__)
 

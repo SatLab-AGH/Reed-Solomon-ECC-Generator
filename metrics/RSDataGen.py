@@ -1,6 +1,6 @@
 import asyncio
 import random
-from typing import Sequence, Dict, Any
+from collections.abc import Sequence
 
 
 class RSDataGen:

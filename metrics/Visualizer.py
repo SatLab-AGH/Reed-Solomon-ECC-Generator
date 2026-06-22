@@ -1,8 +1,8 @@
-from dataclasses import asdict, dataclass
-from pathlib import Path
 import json
 import math
-from typing import List, Union
+from dataclasses import asdict, dataclass
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import brentq
@@ -28,7 +28,7 @@ class BERCurve:
         return [BERCurve(**entry) for entry in raw]
 
     @staticmethod
-    def append_ber_json(path: Union[str, Path], ber_curves: List[object]):
+    def append_ber_json(path: str | Path, ber_curves: list[object]):
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -49,7 +49,7 @@ class BERCurve:
         path.write_text(json.dumps(raw, indent=4))
 
     @staticmethod
-    def clear_ber_json(path: Union[str, Path]):
+    def clear_ber_json(path: str | Path):
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)  # ensure directory exists
         path.write_text(json.dumps([], indent=4))

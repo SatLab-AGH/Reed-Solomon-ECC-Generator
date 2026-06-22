@@ -1,7 +1,7 @@
 [project]
 name = "reed-solomon-generator"
 version = "0.1.0"
-description = "Add your description here"
+description = "Python tool that generates synthesizable Verilog Reed-Solomon ECC blocks (core + AXI-Stream wrapper)"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -18,6 +18,7 @@ dependencies = [
     "pytest-randomly>=4.0.1",
     "pytest-xdist>=3.8.0",
     "reedsolo>=1.7.0",
+    "ruff>=0.15.2",
     "scipy>=1.17.1",
     "setuptools>=82.0.0",
     "vunit-hdl>=4.7.1",
@@ -38,58 +39,80 @@ line-length = 110
 target-version = "py312"
 fix = true
 show-fixes = true
-
+ 
 [tool.ruff.lint]
-select = ["E", "F", "B", "I", "UP", "SIM", "RET", "RUF", "PL"]
-
-ignore = [
-    # Conflicts with formatter or impractical rules
-    "COM812",  # trailing comma missing (formatter handles)
-    "ISC001",  # implicit string concat
-    "D203",    # one-blank-line-before-class (conflicts with D211)
-    "D212",    # multi-line-summary-first-line (conflicts with D213)
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort imports
+    "UP",     # pyupgrade
+    "C4",     # comprehensions
+    "SIM",    # simplifications
+    "RET",    # return rules
+    "ARG",    # unused arguments
+    "PTH",    # pathlib usage
+    "B",      # bugbear
+    "ERA",    # commented code
+    "RUF",    # ruff-native
+    "PL",     # pylint
 ]
-
+ 
+ignore = [
+    # Formatter Integration
+    "E501",    # Line too long (formatter handles)
+    "W191",    # Tabs (formatter normalizes)
+    "ISC001",  # String concat (formatter choice)
+    # Docstring Conflicts
+    "D203",    # vs D211
+    "D212",    # vs D213
+    # Pylint: Context-dependent
+    "PLR0913", # Too many args (dataclasses are fine)
+    "PLC0414", # Unused imports (maybe in __all__)
+]
+ 
 fixable = ["ALL"]
 unfixable = []
-
-preview = true
-
-# Fail CI if any rule violated
-extend-select = [
-    "B",    # bugbear
-    "I",    # import sorting
-    "UP",   # pyupgrade
-    "C4",   # comprehensions
-    "SIM",  # simplifications
-    "RET",  # return rules
-    "ARG",  # unused args
-    "PTH",  # pathlib usage
-    "ERA",  # commented-out code
-    "PL",   # pylint
-    "RUF",  # ruff-native rules
-]
-
+ 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = [
-    "S101",  # allow assert
-    "PLR2004",  # magic values allowed in tests
-    "D",  # ignore docstring rules in tests
+    "S101",   # Use of assert
+    "PLR2004", # Magic values
+    "D",      # Docstrings
+    "F401",   # Unused imports (fixtures!)
+    "F811",   # Redefined names (patches)
 ]
-
+"config.py" = [
+    "D100",   # Module docstring optional
+]
+"__init__.py" = [
+    "F401",   # Re-exported in __all__
+    "D104",   # Package docstring optional
+]
+ 
 [tool.ruff.lint.flake8-bugbear]
-extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
-
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query"
+]
+ 
 [tool.ruff.lint.isort]
 known-first-party = ["src"]
-
+ 
+[tool.ruff.lint.pylint]
+max-args = 10         # Realistic for dataclasses
+max-branches = 12     # Keep default (reasonable)
+max-statements = 50   # Keep default (reasonable)
+max-bool-expr = 5     # Catch complex conditions
+ 
 [tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
-
+quote-style = "double"              # Use double quotes
+indent-style = "space"              # Use spaces, not tabs
+skip-magic-trailing-comma = false   # Allow trailing commas (boolean, not string!)
+line-ending = "auto"                # Respect system line endings
+ 
 [dependency-groups]
 dev = [
     "ruff>=0.15.2",
 ]
+ 
