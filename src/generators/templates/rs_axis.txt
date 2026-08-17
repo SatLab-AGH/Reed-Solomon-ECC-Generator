@@ -1,7 +1,7 @@
 wire [{word_size}-1:0] acc_output;
 /* n_parity_sym_nr can be 1 bit */
 /* verilator lint_off ASCRANGE */
-reg [$clog2({n_parity_max})-1:0] n_parity_sym_nr = 0;
+reg [$clog2({n_parity_max}+1)-1:0] n_parity_sym_nr = 0;
 /* verilator lint_on ASCRANGE */
 reg feedback_control_reg = 0;
 
